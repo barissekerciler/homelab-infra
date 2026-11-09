@@ -18,6 +18,9 @@ spec:
       retries: 3
   values:
     reloader:
+      # Restart every workload whose ConfigMaps or Secrets change, unless it
+      # opts out with reloader.stakater.com/auto: "false" (Prometheus does:
+      # its rule changes reload without a restart).
       autoReloadAll: true
       deployment:
         resources:

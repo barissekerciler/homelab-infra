@@ -315,7 +315,9 @@ delete them.
   Talos binds the controller
   manager, scheduler and etcd metrics to localhost, so their scrapes are off.
   Prometheus picks up ServiceMonitors, PodMonitors and rules from every
-  namespace. node-exporter listens on the nodes' addresses, so a
+  namespace; its config-reloader loads rule changes, and Reloader leaves it
+  out (`reloader.stakater.com/auto: "false"`), since a restart would take it
+  away for a minute on every PrometheusRule change. node-exporter listens on the nodes' addresses, so a
   kube-rbac-proxy in front of it serves the metrics over HTTPS only to
   Prometheus' ServiceAccount token (`node-exporter-rbac.yaml`).
 - `grafana`: Grafana at `https://grafana.home.bariss.dev` (LAN and Tailscale)

@@ -103,6 +103,12 @@ spec:
             cpu: 100m
             memory: 64Mi
     prometheus:
+      # The operator copies these onto the StatefulSet. Reloader restarts every
+      # workload whose ConfigMaps change (autoReloadAll), and every
+      # PrometheusRule change rewrites the rule files ConfigMap; Prometheus'
+      # config-reloader loads those without a restart, so Reloader skips it.
+      annotations:
+        reloader.stakater.com/auto: "false"
       # Flux readiness (flux-operator), Traefik requests and cert-manager
       # certificate expiry for the Homelab dashboard.
       additionalPodMonitors:
