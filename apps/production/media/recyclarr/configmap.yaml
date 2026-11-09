@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recyclarr-config
+  labels:
+    app: recyclarr
+data:
+  # TRaSH Guides anime profiles: original audio with subtitles; dubs-only
+  # and raw releases score below zero. The non-anime profiles and the
+  # quality definitions stay as they are in Sonarr and Radarr.
+  recyclarr.yml: |
+    sonarr:
+      sonarr:
+        base_url: http://sonarr.media.svc.cluster.local:8989
+        api_key: !env_var SONARR_API_KEY
+        quality_profiles:
+          - trash_id: 20e0fc959f1f1704bed501f23bdae76f  # [Anime] Remux-1080p
+            reset_unmatched_scores:
+              enabled: true
+
+    radarr:
+      radarr:
+        base_url: http://radarr.media.svc.cluster.local:7878
+        api_key: !env_var RADARR_API_KEY
+        quality_profiles:
+          - trash_id: 722b624f9af1e492284c4bc842153a38  # [Anime] Remux-1080p
+            reset_unmatched_scores:
+              enabled: true

@@ -1,0 +1,67 @@
+# Vertical Pod Autoscaler (kubernetes/autoscaler's chart). Goldilocks
+# (infrastructure/goldilocks) creates a VPA for every workload; the namespace's
+# goldilocks.fairwinds.com/vpa-update-mode says whether VPA applies it.
+# "Initial" sets each pod's requests from its own usage when the pod starts;
+# VPA never restarts a pod for it, and limits stay as written in Git.
+#
+# The recommender learns from live usage and keeps it in VerticalPodAutoscaler-
+# Checkpoints, so restarts keep the history. It does not read Prometheus
+# history: Prometheus rewrites label names (app.kubernetes.io/name becomes
+# app_kubernetes_io_name), so most charts' selectors never match it.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vpa
+spec:
+  releaseName: vpa
+  chart:
+    spec:
+      chart: vertical-pod-autoscaler
+      sourceRef:
+        kind: HelmRepository
+        name: autoscaler
+        namespace: flux-system
+      version: 0.15.0
+  interval: 1h0m0s
+  values:
+    admissionController:
+      # Off while the recommender learns: memory peaks are aggregated per day, so
+      # the first recommendations are too low to apply. Turn on after a few days
+      # of data; until then VPA only recommends.
+      enabled: false
+      replicas: 1
+      podDisruptionBudget:
+        enabled: false
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
+    recommender:
+      replicas: 1
+      podDisruptionBudget:
+        enabled: false
+      extraArgs:
+        # VPA's defaults (25m, 250 MB per pod) would raise most small pods.
+        - --pod-recommendation-min-cpu-millicores=10
+        - --pod-recommendation-min-memory-mb=32
+      resources:
+        requests:
+          cpu: 20m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    updater:
+      replicas: 1
+      podDisruptionBudget:
+        enabled: false
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi

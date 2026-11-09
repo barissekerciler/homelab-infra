@@ -1,0 +1,242 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bazarr-config-normalizer
+  labels:
+    app: bazarr
+data:
+  normalize-bazarr.py: |
+    #!/usr/bin/env python3
+    import shutil
+    import sqlite3
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    CONFIG = Path("/config/config/config.yaml")
+    DB = Path("/config/db/bazarr.db")
+
+    PROVIDERS = [
+        "opensubtitlescom",
+        "subdl",
+        "subsource",
+        "yifysubtitles",
+        "bsplayer",
+        "gestdown",
+        "animekalesi",
+    ]
+
+    GENERAL_SCALARS = {
+        "adaptive_searching": "false",
+        "adaptive_searching_delay": "1w",
+        "adaptive_searching_delta": "3d",
+        "minimum_score": "90",
+        "minimum_score_movie": "70",
+        "movie_default_enabled": "true",
+        "movie_default_profile": "1",
+        "movie_tag_enabled": "false",
+        "serie_default_enabled": "true",
+        "serie_default_profile": "1",
+        "serie_tag_enabled": "false",
+        "single_language": "false",
+        "days_to_upgrade_subs": "14",
+        "upgrade_manual": "true",
+        "upgrade_subs": "true",
+        "use_radarr": "true",
+        "use_sonarr": "true",
+        "use_scenename": "true",
+        "wanted_search_frequency": "6",
+        "wanted_search_frequency_movie": "6",
+    }
+
+    SUBSYNC_SCALARS = {
+        "use_subsync": "true",
+        "use_subsync_threshold": "true",
+        "use_subsync_movie_threshold": "true",
+        "subsync_threshold": "98",
+        "subsync_movie_threshold": "98",
+    }
+
+    SECTION_SCALARS = {
+        "backup": {
+            "folder": "/config/backups",
+        },
+        "opensubtitlescom": {
+            "include_ai_translated": "false",
+            "include_machine_translated": "false",
+        },
+    }
+
+    ARRAY_BLOCKS = {
+        ("general", "enabled_integrations"): ["anidb"],
+        ("general", "enabled_providers"): PROVIDERS,
+    }
+
+    NESTED_ARRAY_BLOCKS = {
+        ("general", "path_mappings"): [["/content/", "/content/sonarr/"]],
+        ("general", "path_mappings_movie"): [["/content/", "/content/radarr/"]],
+    }
+
+
+    def backup_once(path: Path) -> None:
+        if not path.exists():
+            return
+        backup = path.with_name(f"{path.name}.bak-codex-normalizer")
+        if not backup.exists():
+            shutil.copy2(path, backup)
+
+
+    def section_bounds(lines, section):
+        start = None
+        for index, line in enumerate(lines):
+            if line == f"{section}:\n":
+                start = index
+                break
+        if start is None:
+            lines.append(f"{section}:\n")
+            return len(lines) - 1, len(lines)
+        end = len(lines)
+        for index in range(start + 1, len(lines)):
+            if lines[index] and not lines[index].startswith((" ", "\n")):
+                end = index
+                break
+        return start, end
+
+
+    def replace_scalar(lines, section, key, value):
+        start, end = section_bounds(lines, section)
+        needle = f"  {key}:"
+        for index in range(start + 1, end):
+            if lines[index].startswith(needle):
+                lines[index] = f"  {key}: {value}\n"
+                return
+        lines.insert(start + 1, f"  {key}: {value}\n")
+
+
+    def block_end(lines, index):
+        cursor = index + 1
+        while cursor < len(lines):
+            line = lines[cursor]
+            if line.startswith("  -") or line.startswith("    -") or not line.strip():
+                cursor += 1
+                continue
+            break
+        return cursor
+
+
+    def replace_array(lines, section, key, values):
+        start, end = section_bounds(lines, section)
+        needle = f"  {key}:"
+        block = [f"  {key}:\n"] + [f"  - {value}\n" for value in values]
+        for index in range(start + 1, end):
+            if lines[index].startswith(needle):
+                lines[index:block_end(lines, index)] = block
+                return
+        lines[start + 1:start + 1] = block
+
+
+    def replace_nested_array(lines, section, key, values):
+        start, end = section_bounds(lines, section)
+        needle = f"  {key}:"
+        block = [f"  {key}:\n"]
+        for pair in values:
+            block.append(f"  - - {pair[0]}\n")
+            block.append(f"    - {pair[1]}\n")
+        for index in range(start + 1, end):
+            if lines[index].startswith(needle):
+                lines[index:block_end(lines, index)] = block
+                return
+        lines[start + 1:start + 1] = block
+
+
+    def normalize_config():
+        if not CONFIG.exists():
+            print(f"{CONFIG} does not exist yet; skipping config normalization")
+            return
+
+        backup_once(CONFIG)
+        lines = CONFIG.read_text().splitlines(keepends=True)
+
+        for key, value in GENERAL_SCALARS.items():
+            replace_scalar(lines, "general", key, value)
+        for key, value in SUBSYNC_SCALARS.items():
+            replace_scalar(lines, "subsync", key, value)
+        for section, values in SECTION_SCALARS.items():
+            for key, value in values.items():
+                replace_scalar(lines, section, key, value)
+        for (section, key), values in ARRAY_BLOCKS.items():
+            replace_array(lines, section, key, values)
+        for (section, key), values in NESTED_ARRAY_BLOCKS.items():
+            replace_nested_array(lines, section, key, values)
+
+        Path("/config/backups").mkdir(parents=True, exist_ok=True)
+        CONFIG.write_text("".join(lines))
+        print("Bazarr config normalized")
+
+
+    def normalize_database():
+        if not DB.exists():
+            print(f"{DB} does not exist yet; skipping database normalization")
+            return
+
+        backup_once(DB)
+        con = sqlite3.connect(DB, timeout=30)
+        try:
+            cur = con.cursor()
+            cur.execute(
+                """
+                update table_episodes
+                   set failedAttempts = '[]'
+                 where missing_subtitles is not null
+                   and missing_subtitles != '[]'
+                   and coalesce(failedAttempts, '[]') != '[]'
+                """
+            )
+            episode_attempts = cur.rowcount
+            cur.execute(
+                """
+                update table_episodes
+                   set failedAttempts = '[]'
+                 where (missing_subtitles is null or missing_subtitles = '[]')
+                   and coalesce(failedAttempts, '[]') != '[]'
+                """
+            )
+            episode_stale_attempts = cur.rowcount
+            cur.execute(
+                """
+                update table_movies
+                   set failedAttempts = '[]'
+                 where missing_subtitles is not null
+                   and missing_subtitles != '[]'
+                   and coalesce(failedAttempts, '[]') != '[]'
+                """
+            )
+            movie_attempts = cur.rowcount
+            cur.execute(
+                """
+                update table_movies
+                   set failedAttempts = '[]'
+                 where (missing_subtitles is null or missing_subtitles = '[]')
+                   and coalesce(failedAttempts, '[]') != '[]'
+                """
+            )
+            movie_stale_attempts = cur.rowcount
+            cur.execute("update table_shows set profileId = 1 where profileId is null or profileId = ''")
+            shows_profiled = cur.rowcount
+            cur.execute("update table_movies set profileId = 1 where profileId is null or profileId = ''")
+            movies_profiled = cur.rowcount
+            con.commit()
+        finally:
+            con.close()
+
+        print(
+            "Bazarr database normalized: "
+            f"cleared stale attempts for {episode_attempts} wanted episodes, "
+            f"{episode_stale_attempts} satisfied episodes, {movie_attempts} wanted movies, "
+            f"and {movie_stale_attempts} satisfied movies; "
+            f"defaulted {shows_profiled} shows and {movies_profiled} movies to profile 1"
+        )
+
+
+    print(f"Starting Bazarr config normalizer at {datetime.now(timezone.utc).isoformat()}")
+    normalize_config()
+    normalize_database()

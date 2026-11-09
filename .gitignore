@@ -1,0 +1,24 @@
+# Decrypted or local secrets never belong in Git.
+.env
+*.key
+*.pem
+*.crt
+*.cert
+*.decrypted*
+*credentials.json
+.dockerconfig.json
+secrets.yml
+# The Talos secrets bundle is kept outside Git (talos/README.md).
+talos/secrets*.yaml
+talosconfig
+
+# Local tooling
+tmp/
+.worktrees/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+.claude
+configure-stream-policy.py
+restore/*

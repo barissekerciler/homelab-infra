@@ -1,0 +1,53 @@
+# What both PostgreSQL clusters share (namespace, role password store,
+# superuser, metrics, roles in both clusters). Applied once, here; prod's main
+# cluster and dev's pantry build on it.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: postgresql
+  namespace: flux-system
+spec:
+  interval: 2m
+  retryInterval: 10s
+  dependsOn:
+    - name: infrastructure
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/base/postgresql
+  prune: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prod
+  namespace: flux-system
+spec:
+  interval: 2m
+  retryInterval: 10s
+  dependsOn:
+    - name: infrastructure
+    - name: postgresql
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/production
+  prune: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dev
+  namespace: flux-system
+spec:
+  interval: 2m
+  retryInterval: 10s
+  dependsOn:
+    - name: infrastructure
+    - name: postgresql
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/dev
+  wait: true
+  prune: true

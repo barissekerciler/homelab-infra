@@ -1,0 +1,196 @@
+# Prometheus, its operator, kube-state-metrics and node-exporter. Grafana runs
+# as its own release (../grafana); this chart only ships its datasource and
+# dashboards as ConfigMaps for Grafana's sidecars.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+spec:
+  releaseName: kube-prometheus-stack
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: 92.13.1
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+  interval: 1h0m0s
+  timeout: 10m0s
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    crds:
+      enabled: true
+    defaultRules:
+      disabled:
+        # No Alertmanager: Grafana sends the alerts.
+        PrometheusNotConnectedToAlertmanagers: true
+        # Two unequal nodes (30 GiB and 7 GiB) can never absorb the loss of
+        # one, so these would fire for good. The Homelab dashboard shows the
+        # reserved share per node instead.
+        KubeCPUOvercommit: true
+        KubeMemoryOvercommit: true
+    # Grafana Alerting sends the notifications, these rules' alerts included:
+    # one Grafana rule forwards Prometheus' ALERTS series (../alerting).
+    alertmanager:
+      enabled: false
+    grafana:
+      enabled: false
+      forceDeployDatasources: true
+      forceDeployDashboards: true
+      sidecar:
+        dashboards:
+          annotations:
+            grafana_folder: Kubernetes
+        datasources:
+          alertmanager:
+            enabled: false
+    # Talos serves the controller manager's, scheduler's and etcd's metrics on
+    # localhost only, and there is no kube-proxy: Cilium replaces it
+    # (infrastructure/cilium).
+    kubeControllerManager:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeProxy:
+      enabled: false
+    kubeEtcd:
+      enabled: false
+    kubeApiServer:
+      serviceMonitor:
+        metricRelabelings:
+          # Kubelet series belong to the kubelet job.
+          - sourceLabels: [__name__]
+            action: drop
+            regex: (kubelet|volume_manager|storage_operation|csi_operations|prober|plugin_manager)_.+
+          # Chart default: fewer histogram buckets.
+          - sourceLabels: [__name__, le]
+            action: drop
+            regex: (etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|20|40|45|50)(\.0)?
+    kubelet:
+      serviceMonitor:
+        # Keep only the kubelet's own metrics; the apiserver job has the control
+        # plane series.
+        metricRelabelings:
+          - sourceLabels: [__name__]
+            action: keep
+            regex: (kubelet|volume_manager|storage_operation|csi_operations|rest_client|prober|plugin_manager|process|go)_.+
+          # Chart default: fewer histogram buckets.
+          - sourceLabels: [__name__, le]
+            action: drop
+            regex: (csi_operations|storage_operation_duration)_seconds_bucket;(0.25|2.5|15|25|120|600)(\.0)?
+    prometheusOperator:
+      admissionWebhooks:
+        enabled: false
+      tls:
+        enabled: false
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+      prometheusConfigReloader:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+    prometheus:
+      # Flux readiness (flux-operator), Traefik requests and cert-manager
+      # certificate expiry for the Homelab dashboard.
+      additionalPodMonitors:
+        - name: flux-operator
+          namespaceSelector:
+            matchNames: [flux-system]
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: flux-operator
+          podMetricsEndpoints:
+            - port: http-metrics
+        - name: traefik
+          namespaceSelector:
+            matchNames: [traefik]
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+          podMetricsEndpoints:
+            - port: metrics
+        - name: cert-manager
+          namespaceSelector:
+            matchNames: [cert-manager]
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: cert-manager
+              app.kubernetes.io/component: controller
+          podMetricsEndpoints:
+            - port: http-metrics
+      prometheusSpec:
+        # 35 days, so 30-day queries always have a full window (~0.43 GB/day).
+        retention: 35d
+        retentionSize: 27GB
+        # Pick up ServiceMonitors, PodMonitors, rules and probes from every namespace.
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
+        probeSelectorNilUsesHelmValues: false
+        scrapeConfigSelectorNilUsesHelmValues: false
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: freenas-iscsi-csi
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  # The operator does not resize the live claim: patch the PVC too.
+                  storage: 30Gi
+    kube-state-metrics:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 48Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+    prometheus-node-exporter:
+      # node-exporter runs on the host network, so its 9100 answered anyone on
+      # the LAN. It now listens on 127.0.0.1; kube-rbac-proxy holds 9100 with
+      # TLS and admits only tokens allowed to get the service's subresource
+      # (node-exporter-rbac.yaml grants Prometheus that).
+      kubeRBACProxy:
+        enabled: true
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+      prometheus:
+        monitor:
+          scheme: https
+          bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          # kube-rbac-proxy's self-signed certificate.
+          tlsConfig:
+            insecureSkipVerify: true
+      resources:
+        requests:
+          cpu: 10m
+          memory: 24Mi
+        limits:
+          cpu: 200m
+          memory: 64Mi

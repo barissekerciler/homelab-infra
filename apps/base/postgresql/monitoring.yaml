@@ -1,0 +1,15 @@
+# Prometheus scrapes every instance's exporter (port metrics, 9187).
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: postgres
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/podRole: instance
+    matchExpressions:
+      - key: cnpg.io/cluster
+        operator: In
+        values: [postgres, postgres-pantry]
+  podMetricsEndpoints:
+    - port: metrics

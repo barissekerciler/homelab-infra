@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rdt
+  labels:
+    app: rdt
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rdt
+  template:
+    metadata:
+      labels:
+        app: rdt
+        homelab.bariss.dev/volume-group: sonarr-rdt
+    spec:
+      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - homelab
+        # sonarr-stalled-requeue mounts sonarr's and rdt's RWO config volumes,
+        # so sonarr, rdt and their CronJobs share a node. The first of them
+        # to start may pick any node.
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  homelab.bariss.dev/volume-group: sonarr-rdt
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: normalize-config
+          image: python:3.15-alpine
+          command:
+            - python
+            - /bootstrap/normalize-rdt.py
+          volumeMounts:
+            - name: config
+              mountPath: /data/db
+            - name: config-normalizer
+              mountPath: /bootstrap
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+            limits:
+              cpu: 200m
+      containers:
+        - name: rdt
+          image: rogerfar/rdtclient:2.0.143@sha256:68523637d09ec8a120bd272756d58b393448a656b5967bd45622c4891c65ff36
+          ports:
+            - containerPort: 6500
+              name: http
+          startupProbe:
+            tcpSocket:
+              port: http
+            failureThreshold: 60
+            periodSeconds: 10
+            timeoutSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 10
+          env:
+            - name: PUID
+              value: "568"
+            - name: PGID
+              value: "568"
+            - name: TZ
+              value: "Etc/UTC"
+          volumeMounts:
+            - name: config
+              mountPath: /data/db
+            - name: downloads
+              mountPath: /data/downloads
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: rdt-config-pvc-iscsi
+        - name: config-normalizer
+          configMap:
+            name: rdt-config-normalizer
+            defaultMode: 0555
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: rdt-downloads-pvc

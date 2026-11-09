@@ -1,0 +1,186 @@
+# The official Nextcloud chart. Upgrades: raise the chart version; the
+# image's entrypoint copies the new code and runs occ upgrade. Nextcloud
+# cannot go back, so never lower the chart below the running version.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nextcloud
+spec:
+  releaseName: nextcloud
+  chart:
+    spec:
+      chart: nextcloud
+      version: 9.4.1
+      sourceRef:
+        kind: HelmRepository
+        name: nextcloud
+        namespace: flux-system
+  interval: 1h0m0s
+  # The apt packages install at every start and take a few minutes.
+  timeout: 20m0s
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    nextcloud:
+      host: drive.home.bariss.dev
+      # The chart mounts a data/ subdirectory of its volume here. The user
+      # data volume keeps its own layout and is mounted at the real data
+      # directory, /var/www/html/data, below.
+      datadir: /var/www/chart-data-unused
+      extraEnv:
+        - name: TZ
+          value: Europe/Berlin
+        - name: PHP_UPLOAD_LIMIT
+          value: 100G
+        - name: PHP_MEMORY_LIMIT
+          value: 2048M
+      phpConfigs:
+        opcache-z-99.ini: |
+          opcache.interned_strings_buffer=32
+          opcache.memory_consumption=256
+        nextcloud-z-99.ini: |
+          max_execution_time=30
+      hooks:
+        # Keep config.php on the cluster database settings from the env.
+        before-starting: |
+          #!/bin/sh
+          set -eu
+          php -r '
+          $file = "/var/www/html/config/config.php";
+          require $file;
+          $want = [
+            "dbhost" => getenv("POSTGRES_HOST"),
+            "dbport" => "",
+            "dbname" => getenv("POSTGRES_DB"),
+            "dbuser" => getenv("POSTGRES_USER"),
+            "dbpassword" => getenv("POSTGRES_PASSWORD"),
+          ];
+          $changed = [];
+          foreach ($want as $key => $value) {
+            if (!array_key_exists($key, $CONFIG) || $CONFIG[$key] !== $value) {
+              $CONFIG[$key] = $value;
+              $changed[] = $key;
+            }
+          }
+          if (!$changed) {
+            echo "config.php already uses the cluster database\n";
+            exit(0);
+          }
+          $mode = fileperms($file) & 0777;
+          $tmp = $file . ".k8s-tmp";
+          $body = "<?php\n\$CONFIG = " . var_export($CONFIG, true) . ";\n";
+          if (file_put_contents($tmp, $body) === false || !chmod($tmp, $mode) || !rename($tmp, $file)) {
+            fwrite(STDERR, "could not write config.php\n");
+            exit(1);
+          }
+          echo "config.php: updated " . implode(", ", $changed) . "\n";
+          '
+      extraVolumes:
+        - name: userdata
+          persistentVolumeClaim:
+            claimName: nextcloud-data
+        - name: extra
+          configMap:
+            name: nextcloud-config
+            defaultMode: 0755
+      extraVolumeMounts:
+        - name: userdata
+          mountPath: /var/www/html/data
+        - name: extra
+          mountPath: /k8s/install-packages.sh
+          subPath: install-packages.sh
+        - name: extra
+          mountPath: /usr/local/bin/occ
+          subPath: occ
+        - name: extra
+          mountPath: /etc/apache2/conf-enabled/limitrequestbody.conf
+          subPath: limitrequestbody.conf
+      podSecurityContext:
+        fsGroup: 33
+        fsGroupChangePolicy: OnRootMismatch
+    # Extra apt packages: video previews, OCR, office previews.
+    lifecycle:
+      postStartCommand: ["/k8s/install-packages.sh", "true"]
+    internalDatabase:
+      enabled: false
+    externalDatabase:
+      enabled: true
+      type: postgresql
+      host: postgres-rw.postgresql.svc.cluster.local:5432
+      database: nextcloud
+      # Role nextcloud and its generated password (nextcloud-db-secret.yaml).
+      existingSecret:
+        enabled: true
+        secretName: nextcloud-db
+        usernameKey: username
+        passwordKey: password
+    externalRedis:
+      enabled: true
+      host: nextcloud-redis
+      port: "6379"
+      existingSecret:
+        enabled: true
+        secretName: nextcloud-env
+        passwordKey: REDIS_HOST_PASSWORD
+    cronjob:
+      enabled: true
+      type: sidecar
+      sidecar:
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo '0 * * * * php -f /var/www/html/cron.php' > /var/spool/cron/crontabs/www-data
+            exec /cron.sh
+        lifecycle:
+          postStartCommand: ["/k8s/install-packages.sh", "true"]
+        resources:
+          requests:
+            cpu: 10m
+            memory: 96Mi
+          limits:
+            cpu: "1"
+            memory: 4Gi
+    persistence:
+      enabled: true
+      existingClaim: nextcloud-main
+    ingress:
+      enabled: true
+      className: traefik
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+    startupProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 60
+    readinessProbe:
+      timeoutSeconds: 10
+    livenessProbe:
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 6
+    resources:
+      requests:
+        cpu: 25m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 4Gi
+    # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - homelab

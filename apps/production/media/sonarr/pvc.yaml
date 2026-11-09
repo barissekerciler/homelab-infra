@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  name: sonarr-iscsi-config-pvc
+spec:
+  volumeName: pvc-dc582071-3ac0-4a4e-b0f4-80a84199579f
+  storageClassName: freenas-iscsi-csi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  name: sonarr-nfs-config-pvc
+spec:
+  storageClassName: freenas-nfs-csi
+  volumeName: sonarr-nfs-config-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  name: sonarr-nfs-content-pvc
+spec:
+  storageClassName: freenas-nfs-csi
+  volumeName: sonarr-nfs-content-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi

@@ -1,0 +1,39 @@
+# The volume seerr-pvc is bound to, written down so a rebuilt cluster
+# binds it again.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-9f1eaac7-9425-4066-b3bc-0a4878a7b5f5
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-9f1eaac7-9425-4066-b3bc-0a4878a7b5f5-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1773793282077-5367-org.democratic-csi.iscsi
+    volumeHandle: pvc-9f1eaac7-9425-4066-b3bc-0a4878a7b5f5
+  claimRef:
+    namespace: media
+    name: seerr-pvc

@@ -1,0 +1,92 @@
+# Deletes off-site footage older than 30 days, as Frigate does locally, then
+# the empty folders. Same image, remotes and Secret as the uploader sidecar.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: frigate-cleanup
+  labels:
+    app: frigate-cleanup
+spec:
+  schedule: "30 3 * * *"
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600
+      backoffLimit: 2
+      template:
+        metadata:
+          # Not app: frigate, so the Service never routes to this pod.
+          labels:
+            app: frigate-cleanup
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: cleanup
+              image: rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5
+              command:
+                - sh
+                - -c
+                - "rclone delete crypt: --min-age 30d && rclone rmdirs crypt: --leave-root"
+              env:
+                - name: RCLONE_CONFIG
+                  value: /dev/null
+                - name: RCLONE_CONFIG_HETZNER_TYPE
+                  value: sftp
+                - name: RCLONE_CONFIG_HETZNER_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: frigate-uploader-secrets
+                      key: RCLONE_CONFIG_HETZNER_HOST
+                - name: RCLONE_CONFIG_HETZNER_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: frigate-uploader-secrets
+                      key: RCLONE_CONFIG_HETZNER_USER
+                - name: RCLONE_CONFIG_HETZNER_PORT
+                  value: "23"
+                - name: RCLONE_CONFIG_HETZNER_KNOWN_HOSTS_FILE
+                  value: /etc/uploader/known_hosts
+                - name: RCLONE_CONFIG_HETZNER_KEY_PEM
+                  valueFrom:
+                    secretKeyRef:
+                      name: frigate-uploader-secrets
+                      key: RCLONE_CONFIG_HETZNER_KEY_PEM
+                - name: RCLONE_CONFIG_CRYPT_TYPE
+                  value: crypt
+                - name: RCLONE_CONFIG_CRYPT_REMOTE
+                  value: hetzner:data
+                - name: RCLONE_CONFIG_CRYPT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: frigate-uploader-secrets
+                      key: RCLONE_CONFIG_CRYPT_PASSWORD
+                - name: RCLONE_CONFIG_CRYPT_PASSWORD2
+                  valueFrom:
+                    secretKeyRef:
+                      name: frigate-uploader-secrets
+                      key: RCLONE_CONFIG_CRYPT_PASSWORD2
+                # Runs next to the uploader; together they stay under the
+                # box's 10 connections.
+                - name: RCLONE_TRANSFERS
+                  value: "1"
+                - name: RCLONE_CHECKERS
+                  value: "1"
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              volumeMounts:
+                - name: uploader
+                  mountPath: /etc/uploader
+                  readOnly: true
+          volumes:
+            # For known_hosts.
+            - name: uploader
+              configMap:
+                name: frigate-uploader

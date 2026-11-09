@@ -1,0 +1,16 @@
+# node-exporter on the NAS (truenas/apps/node-exporter, a TrueNAS Custom App).
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: truenas
+spec:
+  jobName: truenas
+  scrapeInterval: 30s
+  staticConfigs:
+    - targets:
+        - 10.0.0.203:9100
+  metricRelabelings:
+    # Per-dataset ZIL and I/O counters: about 3,300 series for 127 datasets.
+    - sourceLabels: [__name__]
+      action: drop
+      regex: node_zfs_zpool_dataset_.+

@@ -1,0 +1,29 @@
+# Every container gets its memory as request and limit, so the scheduler
+# places only what fits and a runaway job is OOM-killed in its own pod instead
+# of pushing a node into swap. CPU stays a small request with no cap:
+# it slows things down, never freezes the node. The box cannot change
+# either object (the admin role has no write access to them).
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: claude-agents
+spec:
+  limits:
+    - type: Container
+      default:
+        memory: 512Mi
+      defaultRequest:
+        cpu: 10m
+        memory: 512Mi
+      max:
+        memory: 6Gi
+      maxLimitRequestRatio:
+        memory: "1"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: claude-agents
+spec:
+  hard:
+    requests.memory: 14Gi

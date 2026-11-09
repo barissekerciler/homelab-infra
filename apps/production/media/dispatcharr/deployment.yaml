@@ -1,0 +1,308 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatcharr
+  labels:
+    app: dispatcharr
+    component: web
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dispatcharr
+      component: web
+  template:
+    metadata:
+      labels:
+        app: dispatcharr
+        component: web
+    spec:
+      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - homelab
+        # dispatcharr-data-pvc is RWO: web and celery share a node. The first
+        # of them to start may pick any node.
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - dispatcharr
+                  - key: component
+                    operator: In
+                    values:
+                      - web
+                      - celery
+              topologyKey: kubernetes.io/hostname
+      # The iSCSI ext4 root starts root-owned; the uid 1000 init and worker write it.
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: init-data-dirs
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          command:
+            - /bin/sh
+            - -c
+            - >-
+              mkdir -p /data/backups /data/logos /data/logo_cache
+              /data/recordings /data/uploads/m3us /data/uploads/epgs
+              /data/m3us /data/epgs /data/plugins /data/models
+              /data/scripts /data/logs
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: recordings
+              mountPath: /data/recordings
+          resources:
+            requests:
+              cpu: 10m
+            limits:
+              cpu: 100m
+      containers:
+        - name: dispatcharr
+          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          ports:
+            - containerPort: 9191
+              name: http
+          startupProbe:
+            httpGet:
+              path: /api/core/version/
+              port: http
+            failureThreshold: 60
+            periodSeconds: 10
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/core/version/
+              port: http
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 10
+          env:
+            - name: DISPATCHARR_ENV
+              value: "modular"
+            - name: DISPATCHARR_PORT
+              value: "9191"
+            - name: DISPATCHARR_LOG_LEVEL
+              value: "info"
+            - name: POSTGRES_HOST
+              value: "postgres-rw.postgresql.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "dispatcharr"
+            - name: POSTGRES_USER
+              value: "dispatcharr"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dispatcharr-db
+                  key: password
+            - name: REDIS_HOST
+              value: "redis.redis.svc.cluster.local"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_DB
+              value: "2"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: recordings
+              mountPath: /data/recordings
+            - name: django-secret
+              mountPath: /data/jwt
+              subPath: jwt
+              readOnly: true
+          resources:
+            requests:
+              cpu: 25m
+              memory: 768Mi
+            limits:
+              cpu: "2"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: dispatcharr-data-pvc
+        - name: recordings
+          persistentVolumeClaim:
+            claimName: dispatcharr-recordings-pvc
+        - name: django-secret
+          secret:
+            secretName: dispatcharr-secret
+            items:
+              - key: DJANGO_SECRET_KEY
+                path: jwt
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatcharr-celery
+  labels:
+    app: dispatcharr
+    component: celery
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  selector:
+    matchLabels:
+      app: dispatcharr
+      component: celery
+  template:
+    metadata:
+      labels:
+        app: dispatcharr
+        component: celery
+    spec:
+      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - homelab
+        # dispatcharr-data-pvc is RWO: web and celery share a node. The first
+        # of them to start may pick any node.
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - dispatcharr
+                  - key: component
+                    operator: In
+                    values:
+                      - web
+                      - celery
+              topologyKey: kubernetes.io/hostname
+      # The iSCSI ext4 root starts root-owned; the uid 1000 init and worker write it.
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: init-data-dirs
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          command:
+            - /bin/sh
+            - -c
+            - >-
+              mkdir -p /data/backups /data/logos /data/logo_cache
+              /data/recordings /data/uploads/m3us /data/uploads/epgs
+              /data/m3us /data/epgs /data/plugins /data/models
+              /data/scripts /data/logs
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: recordings
+              mountPath: /data/recordings
+          resources:
+            requests:
+              cpu: 10m
+            limits:
+              cpu: 100m
+      containers:
+        - name: dispatcharr-celery
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          command:
+            - /bin/sh
+            - -c
+            - umask 0002; exec /app/docker/entrypoint.celery.sh
+          env:
+            - name: DISPATCHARR_ENV
+              value: "modular"
+            - name: DISPATCHARR_PORT
+              value: "9191"
+            - name: DISPATCHARR_WEB_HOST
+              value: "dispatcharr"
+            - name: DISPATCHARR_LOG_LEVEL
+              value: "info"
+            - name: DJANGO_SETTINGS_MODULE
+              value: "dispatcharr.settings"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: POSTGRES_HOST
+              value: "postgres-rw.postgresql.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "dispatcharr"
+            - name: POSTGRES_USER
+              value: "dispatcharr"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dispatcharr-db
+                  key: password
+            - name: REDIS_HOST
+              value: "redis.redis.svc.cluster.local"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_DB
+              value: "2"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: recordings
+              mountPath: /data/recordings
+            - name: django-secret
+              mountPath: /data/jwt
+              subPath: jwt
+              readOnly: true
+            # MEDIA_ROOT for cached M3U/EPG; /app is root-owned and uid 1000 cannot mkdir it.
+            - name: media-cache
+              mountPath: /app/media
+          resources:
+            requests:
+              cpu: 150m
+              memory: 768Mi
+            limits:
+              cpu: "1"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: dispatcharr-data-pvc
+        - name: media-cache
+          emptyDir: {}
+        - name: recordings
+          persistentVolumeClaim:
+            claimName: dispatcharr-recordings-pvc
+        - name: django-secret
+          secret:
+            secretName: dispatcharr-secret
+            items:
+              - key: DJANGO_SECRET_KEY
+                path: jwt

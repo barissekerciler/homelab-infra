@@ -1,0 +1,41 @@
+# The NAS mirror's loop. A ConfigMap of its own, not a key of
+# frigate-uploader or frigate-nas-push: reloader restarts the Frigate pod
+# when one of those changes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frigate-nas-mirror
+data:
+  nas-mirror.sh: |
+    #!/bin/sh
+    # Serves the NAS share mounted at /nas over WebDAV on port 8080. The
+    # Frigate pod's nas-push sidecar copies the recordings and snapshots
+    # here, so they outlive the pod's emptyDir. Once a day, files older than
+    # 30 days leave the NAS, as Frigate drops them locally, then the empty
+    # folders. A failed cleanup is retried in an hour.
+    # When the server exits, so does this script, and the kubelet restarts
+    # the container.
+    # No set -e: one failed cleanup must not end the loop.
+    set -u
+
+    rclone serve webdav /nas --addr :8080 &
+    server=$!
+    # Pod shutdown: stop the server instead of waiting for SIGKILL.
+    trap 'kill "$server"; exit 0' TERM INT
+
+    while kill -0 "$server" 2>/dev/null; do
+      if rclone delete /nas --min-age 30d && rclone rmdirs /nas --leave-root; then
+        delay=86400
+      else
+        delay=3600
+        echo "nas-mirror.sh: cleanup failed, next try in 1 h" >&2
+      fi
+      # Wakes every minute to notice a stopped server.
+      while [ "$delay" -gt 0 ] && kill -0 "$server" 2>/dev/null; do
+        sleep 60 &
+        wait $!
+        delay=$((delay - 60))
+      done
+    done
+    echo "nas-mirror.sh: the WebDAV server exited" >&2
+    exit 1

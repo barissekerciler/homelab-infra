@@ -1,0 +1,50 @@
+# Applies to every node.
+# Talos 1.14 splits the machine config into documents; a v1alpha1 field and the
+# document that replaces it may not both be set.
+machine:
+  sysctls:
+    # containerd-shims and the kubelet use up the default 128 instances.
+    fs.inotify.max_user_instances: "8192"
+    fs.inotify.max_user_watches: "1048576"
+    # Talos turns user namespaces off (0). Jenkins builds and tests need them.
+    user.max_user_namespaces: "11255"
+  udev:
+    rules:
+      # 360 s SCSI command timeout on TrueNAS iSCSI disks, so commands in
+      # flight survive a NAS restart. The 1800 s session replacement timeout
+      # is set per volume by democratic-csi (node-stage secret).
+      - ACTION=="add|change", SUBSYSTEM=="scsi", ATTR{type}=="0", ATTR{vendor}=="TrueNAS", ATTR{model}=="iSCSI Disk", ATTR{timeout}="360"
+---
+apiVersion: v1alpha1
+kind: KubeletConfig
+config:
+  # Pairs with the controller-manager's 240 s grace period in
+  # controlplane.yaml.
+  nodeStatusUpdateFrequency: 60s
+  # Kubelet image GC removes unused images.
+  imageGCHighThresholdPercent: 80
+  imageGCLowThresholdPercent: 70
+---
+apiVersion: v1alpha1
+kind: ResolverConfig
+# The Pi's AdGuard first, public resolvers when it fails.
+nameservers:
+  - address: 10.0.0.87
+  - address: 1.1.1.1
+  - address: 8.8.8.8
+---
+apiVersion: v1alpha1
+kind: KubeNetworkConfig
+# The NetworkPolicies and Traefik's trustedIPs use these ranges. Cilium takes
+# each node's pod range from Kubernetes (ipam mode kubernetes).
+podSubnets:
+  - 10.42.0.0/16
+serviceSubnets:
+  - 10.43.0.0/16
+---
+apiVersion: v1alpha1
+kind: SecurityProfileConfig
+# Workload isolation runs the kubelet and pods in their own PID and mount
+# namespace, apart from the host's iscsid. democratic-csi reaches iscsiadm by
+# nsenter into PID 1, so keep pods in the host namespaces.
+workloadIsolation: false

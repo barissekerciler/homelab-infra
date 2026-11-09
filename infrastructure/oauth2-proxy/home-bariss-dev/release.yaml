@@ -1,0 +1,59 @@
+# GitHub sign-in for *.home.bariss.dev routes. Traefik forwardAuth sends each
+# request to this proxy's "/" (static 202 when signed in, a GitHub redirect
+# otherwise); the protected host routes /oauth2/ here for the callback.
+# Each protected host needs its callback URL on the GitHub App.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: oauth2-proxy
+spec:
+  releaseName: oauth2-proxy
+  chart:
+    spec:
+      chart: oauth2-proxy
+      sourceRef:
+        kind: HelmRepository
+        name: oauth2-proxy
+        namespace: flux-system
+      version: 10.7.1
+  interval: 1h0m0s
+  values:
+    image:
+      registry: quay.io
+      repository: oauth2-proxy/oauth2-proxy
+      tag: "v7.15.5"
+    proxyVarsAsSecrets: true
+    config:
+      existingSecret: oauth2-proxy-secret
+      configFile: |-
+        provider = "github"
+        github_users = [ "barissekerciler" ]
+        email_domains = [ "*" ]
+        upstreams = [ "static://202" ]
+        reverse_proxy = true
+        set_xauthrequest = true
+        skip_provider_button = true
+        whitelist_domains = [ ".home.bariss.dev" ]
+        cookie_domains = [ ".home.bariss.dev" ]
+        cookie_expire = "24h0m0s"
+        cookie_name = "_home_bariss_dev"
+        banner = "-"
+        footer = "-"
+    ingress:
+      enabled: true
+      className: traefik
+      path: /oauth2/
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+        - flux.home.bariss.dev
+        - cam.home.bariss.dev
+        - agent-browser.home.bariss.dev
+        - goldilocks.home.bariss.dev
+        - openbao.home.bariss.dev
+    resources:
+      requests:
+        cpu: 5m
+      limits:
+        cpu: 200m

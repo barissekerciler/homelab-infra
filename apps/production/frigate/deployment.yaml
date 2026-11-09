@@ -1,0 +1,329 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frigate
+  labels:
+    app: frigate
+  annotations:
+    # The init container reads config.yml only at start.
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # One writer for the SQLite database and the RWO volumes.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: frigate
+  template:
+    metadata:
+      labels:
+        app: frigate
+    spec:
+      # Scheduled ahead of other homelab workloads (priorityclass.yaml).
+      priorityClassName: frigate-camera
+      # Frigate substitutes FRIGATE_* variables into its config; no
+      # FRIGATE_SERVICE_HOST, FRIGATE_PORT and the like from the Service.
+      enableServiceLinks: false
+      # Not pinned: both nodes have an Intel iGPU, and the Cudy DNAT admits
+      # both node addresses. Recordings live in an emptyDir, so a new pod
+      # starts empty; the NAS and the Storage Box keep the copies.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - homelab
+      securityContext:
+        # homelab's render group; the device plugin's node on homelab2 is 0666.
+        supplementalGroups:
+          - 993
+      initContainers:
+        # Builds the YOLOv9-c model from the official weights with the export
+        # steps in Frigate's docs (export-model.sh in configmap.yaml). /config
+        # is an emptyDir, so this runs at every new pod and takes a few
+        # minutes; when it fails, copy-config starts Frigate on SSDLite.
+        - name: export-model
+          image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim@sha256:4f5d923c9dcea037f57bda425dd209f3ec643da2f0b74227f68d09dab0b3bb36
+          command:
+            - sh
+            - /etc/frigate-git/export-model.sh
+          # The request stays under the containers' sum, so it reserves nothing extra.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 3Gi
+          volumeMounts:
+            - name: config-git
+              mountPath: /etc/frigate-git
+              readOnly: true
+            - name: config
+              mountPath: /config
+        # Git is the source of truth; changes saved in the UI last until restart.
+        - name: copy-config
+          image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+          command:
+            - sh
+            - -c
+            - |
+              if [ -s /config/model_cache/yolov9-c-320.onnx ]; then
+                cp -L /etc/frigate-git/config.yml /config/config.yml
+              else
+                echo "no YOLOv9 model; starting with the bundled SSDLite"
+                awk '/^model:/ { while ((getline l < "/etc/frigate-git/model-fallback.yml") > 0) print l; skip = 1; next }
+                  skip && /^[^ #]/ { skip = 0 }
+                  !skip' /etc/frigate-git/config.yml > /config/config.yml
+              fi
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: config-git
+              mountPath: /etc/frigate-git
+              readOnly: true
+            - name: config
+              mountPath: /config
+      containers:
+        - name: frigate
+          image: ghcr.io/blakeblackshear/frigate:0.18.2@sha256:fd60f99ffd4eb6c42360ed4e14953e270586f239309ab3983e55b2e97ffac09a
+          # Camera, MQTT and restream credentials for the {FRIGATE_*} placeholders. The
+          # off-site key and crypt password are in frigate-uploader-secrets,
+          # which only the uploader and the cleanup job read.
+          envFrom:
+            - secretRef:
+                name: frigate-secrets
+          ports:
+            - name: http
+              containerPort: 8971
+            # go2rtc's RTSP restream, for Home Assistant at
+            # rtsp://cam.home.bariss.dev:8554, which lists both nodes: the node
+            # without Frigate refuses at once, so HA tries the other. The host
+            # port keeps the Pi's address for the NetworkPolicy.
+            - name: rtsp
+              containerPort: 8554
+              hostPort: 8554
+              protocol: TCP
+          # The Intel device plugin adds the node's iGPU to the pod. Decoding
+          # and detection run there, and homelab's CPU requests are near full.
+          resources:
+            requests:
+              cpu: 300m
+              memory: 1536Mi
+              gpu.intel.com/i915: "1"
+            limits:
+              cpu: 2000m
+              memory: 3Gi
+              gpu.intel.com/i915: "1"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /media/frigate
+            - name: shm
+              mountPath: /dev/shm
+            - name: cache
+              mountPath: /tmp/cache
+        # Sends new segments and snapshots, encrypted, to the Hetzner Storage
+        # Box (uploader-configmap.yaml). Both rclone remotes come from the
+        # environment; there is no rclone.conf. The Storage Box account, its key
+        # and the crypt password come from frigate-uploader-secrets.
+        - name: uploader
+          image: rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5
+          command:
+            - sh
+            - /etc/uploader/upload.sh
+          env:
+            # Config lives in memory only; no missing-file notice per run.
+            - name: RCLONE_CONFIG
+              value: /dev/null
+            # The Storage Box sub-account for frigate/; host and user are in
+            # frigate-uploader-secrets.
+            - name: RCLONE_CONFIG_HETZNER_TYPE
+              value: sftp
+            - name: RCLONE_CONFIG_HETZNER_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-uploader-secrets
+                  key: RCLONE_CONFIG_HETZNER_HOST
+            - name: RCLONE_CONFIG_HETZNER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-uploader-secrets
+                  key: RCLONE_CONFIG_HETZNER_USER
+            - name: RCLONE_CONFIG_HETZNER_PORT
+              value: "23"
+            - name: RCLONE_CONFIG_HETZNER_KNOWN_HOSTS_FILE
+              value: /etc/uploader/known_hosts
+            # One line, newlines written as \n.
+            - name: RCLONE_CONFIG_HETZNER_KEY_PEM
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-uploader-secrets
+                  key: RCLONE_CONFIG_HETZNER_KEY_PEM
+            # Encrypts file contents and names into hetzner:data.
+            - name: RCLONE_CONFIG_CRYPT_TYPE
+              value: crypt
+            - name: RCLONE_CONFIG_CRYPT_REMOTE
+              value: hetzner:data
+            # Password and salt, both obscured.
+            - name: RCLONE_CONFIG_CRYPT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-uploader-secrets
+                  key: RCLONE_CONFIG_CRYPT_PASSWORD
+            - name: RCLONE_CONFIG_CRYPT_PASSWORD2
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-uploader-secrets
+                  key: RCLONE_CONFIG_CRYPT_PASSWORD2
+            # The box allows 10 connections and a run needs up to
+            # transfers + checkers + 1. The nightly cleanup uses 3.
+            - name: RCLONE_TRANSFERS
+              value: "2"
+            - name: RCLONE_CHECKERS
+              value: "2"
+          # Restarts an uploader with no good run for 30 minutes. A paused
+          # uploader skips runs on purpose and is left alone.
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "[ -e /state/pause ] || find /state/heartbeat -mmin -30 | grep -q ."
+            initialDelaySeconds: 300
+            periodSeconds: 300
+            timeoutSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: media
+              mountPath: /media/frigate
+              readOnly: true
+            - name: uploader
+              mountPath: /etc/uploader
+              readOnly: true
+            - name: state
+              mountPath: /state
+        # Copies new recordings and snapshots, as they are, to the NAS through
+        # the frigate-nas-mirror pod's WebDAV server (nas-push-configmap.yaml).
+        # This pod never mounts the NAS: with the NAS down, only the copy
+        # waits and Frigate keeps starting, recording and uploading.
+        - name: nas-push
+          image: rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5
+          command:
+            - sh
+            - /etc/nas-push/nas-push.sh
+          env:
+            # The only remote comes from the environment; no rclone.conf.
+            - name: RCLONE_CONFIG
+              value: /dev/null
+            - name: RCLONE_CONFIG_NAS_TYPE
+              value: webdav
+            - name: RCLONE_CONFIG_NAS_URL
+              value: http://frigate-nas-mirror.frigate.svc.cluster.local:8080
+            # rclone serve webdav keeps the modification times, which the
+            # NAS's 30-day cleanup reads.
+            - name: RCLONE_CONFIG_NAS_VENDOR
+              value: rclone
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 568
+            runAsGroup: 568
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          # Restarts a copy with no good run for 30 minutes.
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "find /state/heartbeat -mmin -30 | grep -q ."
+            initialDelaySeconds: 300
+            periodSeconds: 300
+            timeoutSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 75m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: media
+              mountPath: /media/frigate
+              readOnly: true
+            # Only the uploader's filter.txt.
+            - name: push-filter
+              mountPath: /etc/uploader
+              readOnly: true
+            - name: nas-push
+              mountPath: /etc/nas-push
+              readOnly: true
+            - name: push-state
+              mountPath: /state
+      volumes:
+        - name: config-git
+          configMap:
+            name: frigate-config
+        # SQLite database and model cache. Not kept: a new pod starts empty.
+        - name: config
+          emptyDir:
+            sizeLimit: 1Gi
+        # Recordings and snapshots, 30 days, on the node's own disk, not
+        # TrueNAS: a burglar who unplugs the NAS first must not stop the
+        # recording. Not kept either; nas-push and the uploader copy every
+        # file out within seconds.
+        - name: media
+          emptyDir:
+            sizeLimit: 100Gi
+        # Decoded frames.
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
+        # Segments wait here until Frigate moves them to /media/frigate.
+        - name: cache
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+        - name: uploader
+          configMap:
+            name: frigate-uploader
+        # The uploader's heartbeat and pause switch. They survive container
+        # restarts, not a new pod.
+        - name: state
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: push-filter
+          configMap:
+            name: frigate-uploader
+            items:
+              - key: filter.txt
+                path: filter.txt
+        - name: nas-push
+          configMap:
+            name: frigate-nas-push
+        # nas-push's heartbeat.
+        - name: push-state
+          emptyDir:
+            sizeLimit: 1Mi

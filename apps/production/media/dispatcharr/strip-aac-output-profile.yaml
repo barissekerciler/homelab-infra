@@ -1,0 +1,29 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dispatcharr-strip-aac-output-profile
+spec:
+  redirectRegex:
+    regex: ^(https?)://tv\.home\.bariss\.dev(/(?:output/m3u/?|proxy/ts/stream/[0-9a-fA-F-]+/?))\?(?:output_profile=2(?:&output_format=mpegts)?|output_format=mpegts&output_profile=2)$
+    replacement: ${1}://tv.home.bariss.dev${2}
+    permanent: false
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dispatcharr-strip-aac-output-profile
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`tv.home.bariss.dev`) && (Path(`/output/m3u`) || Path(`/output/m3u/`) || PathRegexp(`^/proxy/ts/stream/[0-9a-fA-F-]+/?$`))
+      kind: Rule
+      priority: 1100
+      middlewares:
+        - name: dispatcharr-strip-aac-output-profile
+      services:
+        - name: dispatcharr
+          port: 9191
+  tls:
+    options:
+      name: default

@@ -1,0 +1,15 @@
+# Home directory of the box: login, projects and tools installed by Claude.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: claude-code-home
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  volumeName: pvc-1bf9fab9-ffee-4178-b308-5b188d976d7d
+  storageClassName: freenas-iscsi-csi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi

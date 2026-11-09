@@ -1,0 +1,120 @@
+# The TrueNAS catalog app "seaweedfs" (train stable, app version 4.52): its
+# install form as `midclt call app.config seaweedfs` returns it, without the
+# admin login. TrueNAS Apps owns the workload; see README.md.
+TZ: Europe/Berlin
+labels: []
+seaweedfs:
+  data_center_name: My Data Center
+  rack_name: My Rack
+  # The form's minimum; the volume count follows the free space.
+  volume_size_limit_mb: 1024
+  # The admin UI's own login, typed into the form by hand (OpenBao
+  # secret/seaweedfs/seaweedfs-admin). The UI is not published.
+  admin_user: <admin_user>
+  admin_password: <admin_password>
+  master_peers: []
+  additional_flags:
+    - container: volume
+      flag: compactionMBps
+      value: "50"
+    # The identities file: an admin key and one key per bucket (config.py).
+    - container: s3
+      flag: config
+      value: /etc/seaweedfs/s3.json
+  additional_envs: []
+# The dataset's owner (pool1/apps/seaweedfs, mode 700).
+run_as:
+  user: 1000
+  group: 1000
+network:
+  # Only S3 is published, on the LAN address. The master, volume, filer and
+  # admin ports have no key check beyond the JWT keys and stay on the app's
+  # own network.
+  s3_port:
+    bind_mode: published
+    port_number: 8333
+    host_ips:
+      - 10.0.0.203
+    certificate_id: null
+  s3_grpc_port:
+    bind_mode: ""
+    port_number: 30373
+  s3_metrics_port:
+    bind_mode: ""
+    port_number: 30367
+  admin_port:
+    bind_mode: ""
+    port_number: 30300
+  admin_grpc_port:
+    bind_mode: ""
+    port_number: 30370
+  worker_metrics_port:
+    bind_mode: ""
+    port_number: 30368
+  master_port:
+    bind_mode: ""
+    port_number: 30301
+  master_grpc_port:
+    bind_mode: ""
+    port_number: 30371
+  master_metrics_port:
+    bind_mode: ""
+    port_number: 30369
+  volume_port:
+    bind_mode: ""
+    port_number: 30302
+  volume_grpc_port:
+    bind_mode: ""
+    port_number: 30374
+  volume_metrics_port:
+    bind_mode: ""
+    port_number: 30365
+  filer_port:
+    bind_mode: ""
+    port_number: 30303
+  filer_grpc_port:
+    bind_mode: ""
+    port_number: 30372
+  filer_metrics_port:
+    bind_mode: ""
+    port_number: 30366
+  networks: []
+storage:
+  master_data:
+    type: host_path
+    host_path_config:
+      acl_enable: false
+      path: /mnt/pool1/apps/seaweedfs/data/master
+  volume_data:
+    type: host_path
+    host_path_config:
+      acl_enable: false
+      path: /mnt/pool1/apps/seaweedfs/data/volume
+  filer_data:
+    type: host_path
+    host_path_config:
+      acl_enable: false
+      path: /mnt/pool1/apps/seaweedfs/data/filer
+  admin_data:
+    type: host_path
+    host_path_config:
+      acl_enable: false
+      path: /mnt/pool1/apps/seaweedfs/data/admin
+  worker_data:
+    type: host_path
+    host_path_config:
+      acl_enable: false
+      path: /mnt/pool1/apps/seaweedfs/data/worker
+  # security.toml (JWT keys) and s3.json (identities), read by every
+  # container; written by config.py.
+  additional_storage:
+    - type: host_path
+      mount_path: /etc/seaweedfs
+      read_only: true
+      host_path_config:
+        acl_enable: false
+        path: /mnt/pool1/apps/seaweedfs/config
+resources:
+  limits:
+    cpus: 2
+    memory: 4096

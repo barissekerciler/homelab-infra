@@ -1,0 +1,26 @@
+# Frigate UI at https://cam.home.bariss.dev (LAN and Tailscale only), behind
+# the GitHub sign-in. The /oauth2/ callback for this host is served by the
+# oauth2-proxy ingress in infrastructure/oauth2-proxy/home-bariss-dev.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frigate
+  labels:
+    app: frigate
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: frigate-frigate-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: cam.home.bariss.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frigate
+                port:
+                  number: 8971

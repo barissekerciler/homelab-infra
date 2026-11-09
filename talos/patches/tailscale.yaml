@@ -1,0 +1,12 @@
+# The siderolabs/tailscale extension runs in kernel mode (tailscale0) and keeps
+# its state in /var/lib/tailscale. That state keeps each node's name and 100.x
+# address, so no auth key is needed (talos/README.md). A node without that state
+# prints a login URL in `talosctl logs ext-tailscale`.
+apiVersion: v1alpha1
+kind: ExtensionServiceConfig
+name: tailscale
+environment:
+  # Log in only when there is no stored node key.
+  - TS_AUTH_ONCE=true
+  # The nodes keep their own resolvers (machine.network.nameservers).
+  - TS_ACCEPT_DNS=false

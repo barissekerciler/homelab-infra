@@ -1,0 +1,157 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich
+  annotations:
+    reloader.stakater.com/auto: 'true'
+spec:
+  releaseName: immich
+  chart:
+    spec:
+      chart: immich
+      version: 0.13.4
+      sourceRef:
+        kind: HelmRepository
+        name: immich
+        namespace: flux-system
+  interval: 1h0m0s
+  values:
+    # Shared by the server, machine learning and valkey.
+    controllers:
+      main:
+        containers:
+          main:
+            env:
+              TZ: Europe/Berlin
+              IMMICH_LOG_LEVEL: log
+              DB_HOSTNAME: postgres-rw.postgresql.svc.cluster.local
+              DB_PORT: "5432"
+              DB_USERNAME: immich
+              DB_DATABASE_NAME: immich
+              DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: immich-db
+                    key: password
+              IMMICH_MACHINE_LEARNING_CLIP_MODEL_NAME: immich-app/ViT-SO400M-16-SigLIP2-384__webli
+              IMMICH_MACHINE_LEARNING_FACIAL_RECOGNITION_MODEL_NAME: immich-app/antelopev2
+              IMMICH_MACHINE_LEARNING_CLASSIFICATION_MODEL_NAME: immich-app/antelopev2
+
+    immich:
+      persistence:
+        library:
+          existingClaim: immich-library
+
+    valkey:
+      enabled: true
+      controllers:
+        main:
+          containers:
+            main:
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+
+    server:
+      controllers:
+        main:
+          # No CPU request room on homelab for a surge pod, and thumbs is RWO.
+          strategy: Recreate
+          containers:
+            main:
+              image:
+                tag: v3.3.5
+                digest: sha256:485d546a2e31d6a8b4db8423fcba5c109de8c218d93410af115fd1ccfc4352a6
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 1536Mi
+                limits:
+                  cpu: "2"
+                  # Each iPhone DNG thumbnail needs ~0.5Gi more while it decodes;
+                  # six at once do not fit in 4Gi.
+                  memory: 8Gi
+      defaultPodOptions:
+        # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
+        affinity:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                preference:
+                  matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values:
+                        - homelab
+        # TrueNAS's apps user (568) owns the library files.
+        securityContext:
+          runAsUser: 568
+          runAsGroup: 568
+          fsGroup: 568
+          fsGroupChangePolicy: OnRootMismatch
+      persistence:
+        # A fresh iSCSI volume. Immich does not refill it by itself: the
+        # "Missing" thumbnail job only checks asset_file rows in the DB, so an
+        # empty volume needs Generate Thumbnails -> "All" once.
+        thumbs:
+          enabled: true
+          existingClaim: immich-thumbs
+          globalMounts:
+            - path: /data/thumbs
+
+    machine-learning:
+      controllers:
+        main:
+          # The model cache is RWO: a surge pod on the other node waits on
+          # Multi-Attach while the old pod holds the volume.
+          strategy: Recreate
+          containers:
+            main:
+              image:
+                tag: v3.3.5
+                digest: sha256:5b28c9352c8374b8a1ed96fbdd8d6755fea6e43510ec43fdf6538aa02ea40f56
+              # Loading the 8.5 GB SigLIP2 model blocks /ping for minutes on one
+              # core; the chart's 1 s / 3 failure probes would kill it mid-load.
+              probes:
+                liveness:
+                  enabled: true
+                  custom: true
+                  spec:
+                    httpGet:
+                      path: /ping
+                      port: http
+                    periodSeconds: 30
+                    timeoutSeconds: 10
+                    failureThreshold: 10
+                readiness:
+                  enabled: true
+                  custom: true
+                  spec:
+                    httpGet:
+                      path: /ping
+                      port: http
+                    periodSeconds: 10
+                    timeoutSeconds: 10
+                    failureThreshold: 30
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 4Gi
+      defaultPodOptions:
+        securityContext:
+          runAsUser: 568
+          runAsGroup: 568
+          fsGroup: 568
+          fsGroupChangePolicy: OnRootMismatch
+      persistence:
+        cache:
+          enabled: true
+          type: persistentVolumeClaim
+          existingClaim: immich-ml-cache

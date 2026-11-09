@@ -1,0 +1,267 @@
+# Volumes of the agent workloads that the Claude Code box applies with kubectl
+# (outside Git). Pinned here so a rebuilt cluster binds the same disks.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-f37dc034-69aa-4ba3-98a9-db53292b119d
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 150Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-f37dc034-69aa-4ba3-98a9-db53292b119d-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1793119914870-4768-org.democratic-csi.iscsi
+    volumeHandle: pvc-f37dc034-69aa-4ba3-98a9-db53292b119d
+  claimRef:
+    namespace: claude-agents
+    name: goal-recorder-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: goal-recorder-data
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: freenas-iscsi-csi
+  volumeName: pvc-f37dc034-69aa-4ba3-98a9-db53292b119d
+  resources:
+    requests:
+      storage: 150Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-383479c0-bc6c-418b-8eec-7a5174296f47
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 150Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-383479c0-bc6c-418b-8eec-7a5174296f47-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1792318885743-1551-org.democratic-csi.iscsi
+    volumeHandle: pvc-383479c0-bc6c-418b-8eec-7a5174296f47
+  claimRef:
+    namespace: claude-agents
+    name: sr-build-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sr-build-data
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: freenas-iscsi-csi
+  volumeName: pvc-383479c0-bc6c-418b-8eec-7a5174296f47
+  resources:
+    requests:
+      storage: 150Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-07f02871-fb8e-4e7f-9b3f-09da5c07fed9
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-07f02871-fb8e-4e7f-9b3f-09da5c07fed9-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1792318885743-1551-org.democratic-csi.iscsi
+    volumeHandle: pvc-07f02871-fb8e-4e7f-9b3f-09da5c07fed9
+  claimRef:
+    namespace: claude-agents
+    name: st-build-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: st-build-data
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: freenas-iscsi-csi
+  volumeName: pvc-07f02871-fb8e-4e7f-9b3f-09da5c07fed9
+  resources:
+    requests:
+      storage: 30Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-44da7ab8-2ed3-4202-99f9-30bcaa9e167b
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 150Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-44da7ab8-2ed3-4202-99f9-30bcaa9e167b-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1792318885743-1551-org.democratic-csi.iscsi
+    volumeHandle: pvc-44da7ab8-2ed3-4202-99f9-30bcaa9e167b
+  claimRef:
+    namespace: claude-agents
+    name: st-research-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: st-research-data
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: freenas-iscsi-csi
+  volumeName: pvc-44da7ab8-2ed3-4202-99f9-30bcaa9e167b
+  resources:
+    requests:
+      storage: 150Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-75ed9d09-06cd-4d39-8c15-c0ff5da95e0a
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 256Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-75ed9d09-06cd-4d39-8c15-c0ff5da95e0a-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1792151047345-5199-org.democratic-csi.iscsi
+    volumeHandle: pvc-75ed9d09-06cd-4d39-8c15-c0ff5da95e0a
+  claimRef:
+    namespace: claude-agents
+    name: wx-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wx-data
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: freenas-iscsi-csi
+  volumeName: pvc-75ed9d09-06cd-4d39-8c15-c0ff5da95e0a
+  resources:
+    requests:
+      storage: 256Gi

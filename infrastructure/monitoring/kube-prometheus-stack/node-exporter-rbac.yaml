@@ -1,0 +1,27 @@
+# kube-rbac-proxy in front of node-exporter (release.yaml) asks the API
+# whether the caller may get the node-exporter Service's subresource of the
+# same name; only Prometheus may.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: node-exporter-metrics
+  namespace: monitoring
+rules:
+  - apiGroups: [""]
+    resources: [services/kube-prometheus-stack-prometheus-node-exporter]
+    resourceNames: [kube-prometheus-stack-prometheus-node-exporter]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: node-exporter-metrics
+  namespace: monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: node-exporter-metrics
+subjects:
+  - kind: ServiceAccount
+    name: kube-prometheus-stack-prometheus
+    namespace: monitoring

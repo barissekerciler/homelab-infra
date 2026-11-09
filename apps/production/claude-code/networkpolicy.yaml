@@ -1,0 +1,49 @@
+# Nothing connects to the box. It may reach the internet, the LAN and the
+# cluster, except where private data lives: the NAS (Nextcloud, Immich and
+# every iSCSI/NFS volume), the camera and its DNAT on the Cudy, the IoT
+# network, and the private apps' pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: claude-code
+spec:
+  podSelector:
+    matchLabels:
+      app: claude-code
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.203/32 # TrueNAS
+              - 10.0.0.33/32 # camera
+              - 10.0.0.224/32 # Cudy: camera DNAT on 8554, management below
+              - 10.1.0.0/24 # IoT network behind the Cudy
+              - 10.42.0.0/16 # pods, allowed by namespace below
+              - 10.43.0.0/16 # services, reached through their pods
+    # The nodes themselves: the Kubernetes API and host-network pods such as
+    # AdGuard. Cilium's 0.0.0.0/0 above does not select the pod's own node.
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.150/32 # homelab
+        - ipBlock:
+            cidr: 10.0.0.151/32 # homelab2
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.224/32
+      ports:
+        - protocol: TCP
+          port: 22
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+    - to:
+        - namespaceSelector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: NotIn
+                values: [frigate, immich, nextcloud, mail, vaultwarden, openbao]

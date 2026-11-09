@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sonarr-stalled-requeue
+  labels:
+    app: sonarr
+    component: stalled-requeue
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 240
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 600
+      template:
+        metadata:
+          labels:
+            app: sonarr
+            component: stalled-requeue
+        spec:
+          restartPolicy: Never
+          # sonarr's and rdt's RWO config volumes are attached where they run.
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      homelab.bariss.dev/volume-group: sonarr-rdt
+                  topologyKey: kubernetes.io/hostname
+          containers:
+            - name: requeue
+              image: python:3.15-alpine
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - /app/requeue.py
+              env:
+                - name: SONARR_URL
+                  value: http://sonarr.media.svc.cluster.local:8989
+                - name: SONARR_CONFIG
+                  value: /sonarr-config/config.xml
+                - name: RDT_DB
+                  value: /rdt-db/rdtclient.db
+                - name: STALLED_MINUTES
+                  value: "10"
+                - name: MAX_PER_RUN
+                  value: "3"
+              volumeMounts:
+                - name: script
+                  mountPath: /app/requeue.py
+                  subPath: requeue.py
+                  readOnly: true
+                - name: sonarr-config
+                  mountPath: /sonarr-config
+                  readOnly: true
+                - name: rdt-db
+                  mountPath: /rdt-db
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                limits:
+                  cpu: 200m
+          volumes:
+            - name: script
+              configMap:
+                name: sonarr-stalled-requeue-script
+                defaultMode: 0555
+            - name: sonarr-config
+              persistentVolumeClaim:
+                claimName: sonarr-iscsi-config-pvc
+                readOnly: true
+            - name: rdt-db
+              persistentVolumeClaim:
+                claimName: rdt-config-pvc-iscsi
+                readOnly: true

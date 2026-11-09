@@ -1,0 +1,48 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: sources
+  interval: 2m
+  retryInterval: 10s
+  path: ./infrastructure/cert-manager/controller
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: cert-manager
+      namespace: cert-manager
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-issuers
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cert-manager
+    - name: external-secrets
+  interval: 2m
+  retryInterval: 10s
+  path: ./infrastructure/cert-manager/cert-issuers
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  # ${ACME_EMAIL} in the ClusterIssuers. The Secret comes from OpenBao through
+  # infrastructure (cert-manager/acme-account), which runs after this one, so it
+  # is optional: on a new cluster the first apply leaves the variable as it is,
+  # and the next reconcile, once the Secret exists, fills it in.
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: acme-account
+        optional: true

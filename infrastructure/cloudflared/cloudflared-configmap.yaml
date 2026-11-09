@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared
+  namespace: cloudflare
+data:
+  config.yaml: |
+    tunnel: 40c35fdb-0694-4e53-9fc1-306d4c15a4f6
+    credentials-file: /etc/cloudflared/creds/credentials.json
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+    ingress:
+    - hostname: jenkins-hook.bariss.dev
+      path: /github-webhook/.*
+      service: http://jenkins.jenkins.svc.cluster.local:8080
+    - hostname: jenkins-hook.bariss.dev
+      service: http_status:404
+    - hostname: bariss.dev
+      service: http://traefik.traefik.svc.cluster.local:80
+    # cloudflared matches wildcards by suffix, so "*.bariss.dev" below would
+    # also take every *.home host (LAN and Tailscale only) the moment a public
+    # DNS record pointed at the tunnel.
+    - hostname: "*.home.bariss.dev"
+      service: http_status:404
+    - hostname: "*.bariss.dev"
+      service: http://traefik.traefik.svc.cluster.local:80
+    - service: http_status:404

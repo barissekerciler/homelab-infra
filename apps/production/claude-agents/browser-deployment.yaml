@@ -1,0 +1,71 @@
+# The box's browser, apart from the box: a page that breaks Chromium lands
+# here, without the box's Claude, GitHub or cluster tokens, and behind the
+# same egress limits as everything in claude-agents.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-browser
+  labels:
+    app: claude-browser
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # One Chromium per profile, and the volume is RWO.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: claude-browser
+  template:
+    metadata:
+      labels:
+        app: claude-browser
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: browser
+          image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
+          command:
+            - bash
+            - /opt/browser/start.sh
+          env:
+            - name: TZ
+              value: Europe/Berlin
+          ports:
+            - name: mcp
+              containerPort: 8931
+            - name: novnc
+              containerPort: 6080
+          readinessProbe:
+            tcpSocket:
+              port: mcp
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 25m
+              memory: 1536Mi
+            limits:
+              cpu: 2000m
+              memory: 1536Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: shm
+              mountPath: /dev/shm
+            - name: script
+              mountPath: /opt/browser
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: claude-browser-data
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+        - name: script
+          configMap:
+            name: claude-browser
+            defaultMode: 0555

@@ -1,0 +1,86 @@
+# The TrueNAS Nextcloud app's directories, used in place.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nextcloud-html-nfs-pv
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    app: nextcloud
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-nfs-csi
+  nfs:
+    server: 10.0.0.203
+    path: /mnt/pool1/apps/nextcloud-secure/appdata
+  mountOptions:
+    - noatime
+    - nfsvers=4.1
+    - nconnect=4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nextcloud-data-nfs-pv
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    app: nextcloud
+spec:
+  capacity:
+    storage: 1Ti
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-nfs-csi
+  nfs:
+    server: 10.0.0.203
+    path: /mnt/pool1/apps/nextcloud-secure/userdata
+  mountOptions:
+    - noatime
+    - nfsvers=4.1
+    - nconnect=4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-f7ccbd5e-8b0e-4ee2-9f1a-545fadbf0b9b
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-f7ccbd5e-8b0e-4ee2-9f1a-545fadbf0b9b-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1792151047345-5199-org.democratic-csi.iscsi
+    volumeHandle: pvc-f7ccbd5e-8b0e-4ee2-9f1a-545fadbf0b9b
+  claimRef:
+    namespace: nextcloud
+    name: nextcloud-main

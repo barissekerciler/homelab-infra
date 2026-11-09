@@ -1,0 +1,38 @@
+# Provisioned by democratic-csi for the claude-code-home claim.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-1bf9fab9-ffee-4178-b308-5b188d976d7d
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-1bf9fab9-ffee-4178-b308-5b188d976d7d-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1792076305857-552-org.democratic-csi.iscsi
+    volumeHandle: pvc-1bf9fab9-ffee-4178-b308-5b188d976d7d
+  claimRef:
+    namespace: claude-code
+    name: claude-code-home

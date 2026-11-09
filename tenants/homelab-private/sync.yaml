@@ -1,0 +1,48 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: homelab-private
+spec:
+  interval: 1m
+  url: ssh://git@github.com/barissekerciler/homelab-private.git
+  ref:
+    branch: main
+  secretRef:
+    name: git-ssh
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: private-prod
+spec:
+  serviceAccountName: homelab-private
+  interval: 2m
+  retryInterval: 10s
+  dependsOn:
+    - name: prod
+      namespace: flux-system
+  sourceRef:
+    kind: GitRepository
+    name: homelab-private
+  path: ./production
+  prune: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: private-dev
+spec:
+  serviceAccountName: homelab-private
+  interval: 2m
+  retryInterval: 10s
+  dependsOn:
+    - name: dev
+      namespace: flux-system
+    # Database role passwords shared by both environments are created there.
+    - name: private-prod
+  sourceRef:
+    kind: GitRepository
+    name: homelab-private
+  path: ./dev
+  wait: true
+  prune: true

@@ -1,0 +1,185 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatcharr-vod-logo-redirect
+  labels:
+    app: dispatcharr
+    component: vod-logo-redirect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dispatcharr
+      component: vod-logo-redirect
+  template:
+    metadata:
+      labels:
+        app: dispatcharr
+        component: vod-logo-redirect
+    spec:
+      containers:
+        - name: redirect
+          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          command:
+            - /dispatcharrpy/bin/python
+            - -c
+          args:
+            - |
+              import os
+              import re
+              import sys
+              from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+              from urllib.parse import urlparse
+
+              import psycopg
+
+              PORT = int(os.environ.get("REDIRECT_PORT", "8080"))
+              LOGO_PATH = re.compile(r"^/api/vod/vodlogos/([0-9]+)/cache/?$")
+
+
+              def lookup_logo_url(logo_id):
+                  with psycopg.connect(
+                      host=os.environ["POSTGRES_HOST"],
+                      port=os.environ.get("POSTGRES_PORT", "5432"),
+                      dbname=os.environ["POSTGRES_DB"],
+                      user=os.environ["POSTGRES_USER"],
+                      password=os.environ["POSTGRES_PASSWORD"],
+                      connect_timeout=3,
+                  ) as conn:
+                      with conn.cursor() as cur:
+                          cur.execute(
+                              "SELECT url FROM vod_vodlogo WHERE id = %s",
+                              (logo_id,),
+                          )
+                          row = cur.fetchone()
+
+                  if not row or not row[0]:
+                      return None
+
+                  url = row[0]
+                  parsed = urlparse(url)
+                  if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                      return None
+                  return url
+
+
+              class Handler(BaseHTTPRequestHandler):
+                  protocol_version = "HTTP/1.1"
+
+                  def do_GET(self):
+                      self.handle_logo_request()
+
+                  def do_HEAD(self):
+                      self.handle_logo_request()
+
+                  def do_OPTIONS(self):
+                      self.empty_response(204)
+
+                  def handle_logo_request(self):
+                      path = urlparse(self.path).path
+                      if path == "/healthz":
+                          self.empty_response(200)
+                          return
+
+                      match = LOGO_PATH.match(path)
+                      if not match:
+                          self.empty_response(404)
+                          return
+
+                      try:
+                          url = lookup_logo_url(int(match.group(1)))
+                      except Exception as exc:
+                          print(f"logo redirect lookup failed: {exc}", file=sys.stderr)
+                          self.empty_response(502)
+                          return
+
+                      if not url:
+                          self.empty_response(404)
+                          return
+
+                      self.send_response(302)
+                      self.send_header("Location", url)
+                      self.send_header("Cache-Control", "public, max-age=86400")
+                      self.send_header("Access-Control-Allow-Origin", "*")
+                      self.send_header("Content-Length", "0")
+                      self.end_headers()
+
+                  def empty_response(self, status):
+                      self.send_response(status)
+                      self.send_header("Access-Control-Allow-Origin", "*")
+                      self.send_header("Content-Length", "0")
+                      self.end_headers()
+
+                  def log_message(self, fmt, *args):
+                      print("%s - %s" % (self.address_string(), fmt % args))
+
+
+              ThreadingHTTPServer(("", PORT), Handler).serve_forever()
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: REDIRECT_PORT
+              value: "8080"
+            - name: POSTGRES_HOST
+              value: "postgres-rw.postgresql.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "dispatcharr"
+            - name: POSTGRES_USER
+              value: "dispatcharr"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dispatcharr-db
+                  key: password
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 5m
+            limits:
+              cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dispatcharr-vod-logo-redirect
+spec:
+  selector:
+    app: dispatcharr
+    component: vod-logo-redirect
+  ports:
+    - port: 8080
+      targetPort: http
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dispatcharr-vod-logo-redirect
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`tv.home.bariss.dev`) && PathRegexp(`^/api/vod/vodlogos/[0-9]+/cache/?$`)
+      kind: Rule
+      priority: 1000
+      services:
+        - name: dispatcharr-vod-logo-redirect
+          port: 8080
+  tls:
+    options:
+      name: default

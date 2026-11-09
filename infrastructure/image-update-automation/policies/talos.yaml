@@ -1,0 +1,14 @@
+# Newest Talos patch of the current minor (no pre-releases). A new minor is a
+# manual change of this range and of infrastructure/tuppr/upgrades/talos.yaml,
+# one minor at a time.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: talos
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: talos
+  policy:
+    semver:
+      range: "~1.14"

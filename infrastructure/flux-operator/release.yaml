@@ -1,0 +1,57 @@
+# Flux Web UI at https://flux.home.bariss.dev (LAN and Tailscale only).
+# Flux itself stays on clusters/homelab/flux-system; there is no FluxInstance,
+# so the operator only serves the UI and its reports.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: flux-operator
+  namespace: flux-system
+spec:
+  releaseName: flux-operator
+  chart:
+    spec:
+      chart: flux-operator
+      version: 0.61.0
+      sourceRef:
+        kind: HelmRepository
+        name: flux-operator
+        namespace: flux-system
+  interval: 1h0m0s
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    web:
+      # The chart's policy admits the UI port from every namespace; ours
+      # admits only Traefik (networkpolicy.yaml).
+      networkPolicy:
+        create: false
+      config:
+        baseURL: https://flux.home.bariss.dev
+        # oauth2-proxy (GitHub) guards the route; everyone past it acts as flux-web-admins.
+        authentication:
+          type: Anonymous
+          anonymous:
+            username: flux-web
+            groups:
+              - flux-web-admins
+      ingress:
+        enabled: true
+        className: traefik
+        annotations:
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: "true"
+          traefik.ingress.kubernetes.io/router.middlewares: flux-system-flux-web-auth@kubernetescrd
+        hosts:
+          - host: flux.home.bariss.dev
+            paths:
+              - path: /
+                pathType: Prefix

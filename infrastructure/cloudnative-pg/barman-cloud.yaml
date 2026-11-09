@@ -1,0 +1,39 @@
+# The Barman Cloud plugin (official chart): WAL archiving and base backups of
+# the CloudNativePG clusters to S3 (ObjectStore in apps/production/postgresql,
+# bucket cnpg-backups on SeaweedFS, a TrueNAS app). It must run in the
+# operator's namespace.
+# The chart issues its mTLS certificates through cert-manager and installs the
+# barmancloud.cnpg.io CRD.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: plugin-barman-cloud
+spec:
+  releaseName: plugin-barman-cloud
+  dependsOn:
+    - name: cloudnative-pg
+  chart:
+    spec:
+      chart: plugin-barman-cloud
+      version: 0.8.1
+      sourceRef:
+        kind: HelmRepository
+        name: cloudnative-pg
+        namespace: flux-system
+  interval: 1h0m0s
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    crds:
+      create: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi

@@ -1,0 +1,67 @@
+# Immich (apps/production/immich). VectorChord and pgvector need the superuser
+# to create them, so the Database does; Immich only uses them.
+# Role immich; its password is generated once into OpenBao
+# secret/postgresql/immich-db (apps/base/postgresql/passwords.yaml) and
+# read back by immich-db-secret.yaml.
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: immich-db
+  namespace: postgresql
+spec:
+  refreshInterval: 1h
+  updatePolicy: IfNotExists
+  deletionPolicy: None
+  secretStoreRefs:
+    - kind: SecretStore
+      name: openbao-passwords
+  selector:
+    generatorRef:
+      apiVersion: generators.external-secrets.io/v1alpha1
+      kind: Password
+      name: role-password
+  data:
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: postgresql/immich-db
+          property: password
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: immich
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: immich
+  login: true
+  passwordSecret:
+    name: immich-db
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: immich
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: immich
+  owner: immich
+  extensions:
+    - name: vector
+      schema: public
+    - name: vchord
+      schema: public
+    - name: cube
+      schema: public
+    - name: earthdistance
+      schema: public
+    - name: pg_trgm
+      schema: public
+    - name: unaccent
+      schema: public
+    - name: uuid-ossp
+      schema: public

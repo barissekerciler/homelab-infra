@@ -1,0 +1,20 @@
+# Every Namespace gets VPA mode Initial unless it says "off" itself, so a new
+# namespace needs nothing. Each top-level kustomization that creates Namespaces
+# (infrastructure, infrastructure/cert-manager/controller, infrastructure/democratic-csi,
+# apps/base/postgresql, apps/production, apps/dev) lists this component.
+# Initial: a pod's requests come from its own usage when it starts; VPA only
+# touches requests (RequestsOnly), never limits, with a 10m/32Mi floor.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: Namespace
+      annotationSelector: goldilocks.fairwinds.com/vpa-update-mode!=off
+    patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: any
+        annotations:
+          goldilocks.fairwinds.com/vpa-update-mode: Initial
+          goldilocks.fairwinds.com/vpa-resource-policy: '{"containerPolicies":[{"containerName":"*","controlledValues":"RequestsOnly","minAllowed":{"cpu":"10m","memory":"32Mi"}}]}'

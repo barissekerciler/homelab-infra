@@ -1,0 +1,59 @@
+# The nas-push sidecar's loop, in the Frigate pod. The rclone filter is the
+# uploader's (frigate-uploader, filter.txt).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frigate-nas-push
+data:
+  nas-push.sh: |
+    #!/bin/sh
+    # Copies new Frigate recordings and snapshots, as they are (not
+    # encrypted), to the NAS through the frigate-nas-mirror pod's WebDAV
+    # server (remote nas:, from the environment), so they outlive this pod:
+    # /media/frigate is an emptyDir. Every 5 s it copies the files changed in
+    # the last 15 min. At start and then every hour it reconciles the last
+    # 72 h, so the copy catches up after an outage.
+    # After every good run it touches /state/heartbeat (the liveness probe
+    # reads it). After a failed run it waits 10, 20, 40, 80, then 120 s, so a
+    # dead NAS does not spin.
+    # The mirror pod removes files older than 30 days from the NAS.
+    # No set -e: one failed run must not end the loop.
+    set -u
+
+    # Pod shutdown: stop after the current command instead of waiting for SIGKILL.
+    trap 'exit 0' TERM INT
+
+    last_reconcile=0
+    failures=0
+    while true; do
+      now=$(date +%s)
+      # A failed reconcile is retried on the next run.
+      if [ $((now - last_reconcile)) -ge 3600 ]; then
+        rclone copy /media/frigate nas: --filter-from /etc/uploader/filter.txt --max-age 72h
+        status=$?
+        if [ "$status" -eq 0 ]; then
+          last_reconcile=$now
+        fi
+      else
+        # --no-traverse looks up each new file instead of listing the share.
+        rclone copy /media/frigate nas: --filter-from /etc/uploader/filter.txt --max-age 15m --no-traverse
+        status=$?
+      fi
+      if [ "$status" -eq 0 ]; then
+        touch /state/heartbeat
+        failures=0
+        sleep 5
+      else
+        failures=$((failures + 1))
+        # min(5 * 2^failures, 120) s; the cap also keeps the shift small.
+        if [ "$failures" -ge 5 ]; then
+          delay=120
+        else
+          delay=$((5 * (1 << failures)))
+        fi
+        echo "nas-push.sh: run failed ($failures in a row), next try in $delay s" >&2
+        # In the background, so the TERM trap need not wait up to 120 s.
+        sleep "$delay" &
+        wait $!
+      fi
+    done

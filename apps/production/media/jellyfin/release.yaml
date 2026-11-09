@@ -1,0 +1,103 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyfin
+  annotations:
+    reloader.stakater.com/auto: 'true'
+spec:
+  releaseName: jellyfin
+  chart:
+    spec:
+      chart: jellyfin
+      version: 3.6.0
+      sourceRef:
+        kind: HelmRepository
+        name: jellyfin
+        namespace: flux-system
+  interval: 1h0m0s
+  # The 750 MB image pull can take longer than the default five-minute Helm
+  # wait on homelab2.
+  timeout: 15m0s
+  values:
+    image:
+      repository: ghcr.io/jellyfin/jellyfin
+      tag: 12.3@sha256:2038fe038ab3876a80f6e7b7e0aef6607b032c7dc0c9b3ad3296d0b2eba3bbb5
+    # One writer for the SQLite database on the RWO volume.
+    deploymentStrategy:
+      type: Recreate
+    # Not pinned: both nodes mount NFS and have an Intel GPU. homelab2's
+    # i5-6500 cannot decode 10-bit HEVC or AV1, so it runs there only when
+    # homelab is down or full.
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - homelab
+    # TrueNAS's apps user (568) owns the library files. 993 is homelab's render
+    # group.
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: OnRootMismatch
+      supplementalGroups:
+        - 993
+    jellyfin:
+      env:
+        - name: TZ
+          value: Europe/Berlin
+        - name: JELLYFIN_PublishedServerUrl
+          value: watch.home.bariss.dev
+        - name: JELLYFIN_CACHE_DIR
+          value: /cache
+    persistence:
+      config:
+        existingClaim: jellyfin-config
+      cache:
+        enabled: true
+        existingClaim: jellyfin-cache
+      media:
+        enabled: false
+    # The TrueNAS library paths, so the database's item paths stay valid.
+    volumes:
+      - name: sonarr
+        persistentVolumeClaim:
+          claimName: sonarr-nfs-content-pvc
+      - name: radarr
+        persistentVolumeClaim:
+          claimName: radarr-nfs-content-pvc
+      - name: transcodes
+        emptyDir: {}
+      # Dispatcharr DVR output, played from a Jellyfin library.
+      - name: dispatcharr-recordings
+        persistentVolumeClaim:
+          claimName: dispatcharr-recordings-pvc
+          readOnly: true
+    volumeMounts:
+      - name: sonarr
+        mountPath: /sonarr
+      - name: radarr
+        mountPath: /radarr
+      - name: dispatcharr-recordings
+        mountPath: /recordings
+        readOnly: true
+      # One transcodes volume at both paths, as in the TrueNAS app's layout.
+      - name: transcodes
+        mountPath: /config/transcodes
+      - name: transcodes
+        mountPath: /cache/transcodes
+    # The Intel device plugin adds homelab's QuickSync GPU to the pod.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 384Mi
+        gpu.intel.com/i915: "1"
+      limits:
+        cpu: "2"
+        memory: 4Gi
+        gpu.intel.com/i915: "1"

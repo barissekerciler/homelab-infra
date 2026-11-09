@@ -1,0 +1,23 @@
+# The superuser's password: generated once into OpenBao (passwords.yaml).
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: postgres-superuser
+spec:
+  refreshInterval: 1h
+  updatePolicy: IfNotExists
+  deletionPolicy: None
+  secretStoreRefs:
+    - kind: SecretStore
+      name: openbao-passwords
+  selector:
+    generatorRef:
+      apiVersion: generators.external-secrets.io/v1alpha1
+      kind: Password
+      name: role-password
+  data:
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: postgresql/postgres-superuser
+          property: password

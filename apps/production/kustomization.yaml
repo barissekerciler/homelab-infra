@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - postgresql
+  - redis
+  - media
+  - gluetun
+  - jenkins
+  - redlib
+  - mail
+  - immich
+  - nextcloud
+  - frigate
+  - vikunja
+  - claude-code
+  - claude-agents
+  - openbao
+
+components:
+  - ../../infrastructure/goldilocks/namespace-defaults

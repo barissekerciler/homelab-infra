@@ -1,0 +1,151 @@
+# Offsite copy of the main cluster's own backups. Barman Cloud writes base
+# backups and WAL to the bucket cnpg-backups on SeaweedFS, a TrueNAS app
+# (backups.yaml, truenas/apps/seaweedfs), and SeaweedFS keeps objects inside
+# its own volume files. This nightly job copies the bucket as plain files into
+# postgresql/ on the TrueNAS dataset pool1/apps/db-dumps (encrypted, NFS for
+# the two nodes only), which the Cloud Sync task "Hetzner: database dumps"
+# uploads, rclone-encrypted, at 00:45 Berlin. A restore from Hetzner needs
+# only those files in any S3 bucket (README.md), no SeaweedFS.
+#
+# It copies and never mirrors: a file leaves the copy only by age (KEEP_DAYS),
+# so a new or emptied bucket never drops older backups here, or at Hetzner.
+# The share also holds openbao/ (apps/production/openbao/snapshot-copy.yaml);
+# this job touches only postgresql/.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgresql-dumps-nfs-pv
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    app: postgresql
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-nfs-csi
+  nfs:
+    server: 10.0.0.203
+    path: /mnt/pool1/apps/db-dumps
+  mountOptions:
+    - noatime
+    - nfsvers=4.1
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-dumps
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  storageClassName: freenas-nfs-csi
+  volumeName: postgresql-dumps-nfs-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgresql-backup-copy
+  labels:
+    app: postgresql
+    task: backup-copy
+spec:
+  # Before the 00:45 upload. The base backup runs at 02:00 UTC
+  # (backups.yaml), so each night carries the last base backup and the WAL
+  # since then.
+  schedule: "30 0 * * *"
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app: postgresql
+            task: backup-copy
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: copy
+              image: rclone/rclone:1.75.2
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+              args:
+                - |
+                  set -eu
+                  mkdir -p /dumps/postgresql
+                  # A run killed mid-file leaves a .partial; never upload it.
+                  find /dumps/postgresql -name '*.partial' -delete
+                  rclone copy --stats-one-line -v seaweedfs:cnpg-backups /dumps/postgresql
+                  # Prune only while new base backups arrive: a stopped backup
+                  # must not age the copy away, and with it Hetzner's.
+                  if [ -z "$(find /dumps/postgresql/postgres/base -name backup.info -mtime -2 2>/dev/null)" ]; then
+                    echo "no base backup from the last two days" >&2
+                    exit 1
+                  fi
+                  # The bucket keeps 14 days plus the base backup that starts
+                  # them; KEEP_DAYS stays above that, or the next copy would
+                  # fetch pruned files again.
+                  find /dumps/postgresql -type f -mtime +$((KEEP_DAYS - 1)) -delete
+                  find /dumps/postgresql -mindepth 1 -type d -empty -delete
+                  du -sh /dumps/postgresql
+              env:
+                - name: KEEP_DAYS
+                  value: "17"
+                # One stream per file: the base backup is one object of about
+                # 1 GB, and four parallel 64 MiB chunks outgrow the limit.
+                - name: RCLONE_MULTI_THREAD_STREAMS
+                  value: "0"
+                - name: HOME
+                  value: /tmp
+                # The rclone remote "seaweedfs", read with the bucket's own
+                # key (AWS_* from cnpg-backups-s3).
+                - name: RCLONE_CONFIG_SEAWEEDFS_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_SEAWEEDFS_PROVIDER
+                  value: SeaweedFS
+                - name: RCLONE_CONFIG_SEAWEEDFS_ENDPOINT
+                  value: http://10.0.0.203:8333
+                - name: RCLONE_CONFIG_SEAWEEDFS_ENV_AUTH
+                  value: "true"
+              envFrom:
+                - secretRef:
+                    name: cnpg-backups-s3
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              volumeMounts:
+                - name: dumps
+                  mountPath: /dumps
+          volumes:
+            - name: dumps
+              persistentVolumeClaim:
+                claimName: postgresql-dumps

@@ -1,0 +1,70 @@
+# homelab is the only control plane node and runs most workloads.
+machine:
+  features:
+    # tuppr (infrastructure/tuppr) upgrades Talos and Kubernetes over the Talos
+    # API from pods in system-upgrade; only that namespace gets the role. Talos
+    # allows this on control plane nodes only; homelab2 is reached through it.
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:admin
+      allowedKubernetesNamespaces:
+        - system-upgrade
+  # Talos API (talosctl) over LAN and MagicDNS; the node patch adds the
+  # Tailscale address.
+  certSANs:
+    - 10.0.0.150
+    - homelab
+---
+apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+# kubectl over LAN and MagicDNS; the node patch adds the Tailscale address.
+certExtraSANs:
+  - 10.0.0.150
+  - homelab
+---
+apiVersion: v1alpha1
+kind: KubeControllerManagerConfig
+extraArgs:
+  # Pairs with the kubelet's 60 s nodeStatusUpdateFrequency (common.yaml).
+  node-monitor-period: 60s
+  node-monitor-grace-period: 240s
+---
+# Talos enforces "baseline" by default. AdGuard, democratic-csi, gluetun,
+# node-exporter and others need host access.
+# Namespaces that want stricter rules label themselves (claude-agents).
+apiVersion: v1alpha1
+kind: KubeAdmissionControlConfig
+name: PodSecurity
+configuration:
+  apiVersion: pod-security.admission.config.k8s.io/v1alpha1
+  kind: PodSecurityConfiguration
+  defaults:
+    enforce: privileged
+    enforce-version: latest
+    audit: privileged
+    audit-version: latest
+    warn: privileged
+    warn-version: latest
+---
+# Workloads also run on the control plane: replace the generated node config,
+# which carries the control-plane NoSchedule taint, with one without taints.
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  node-role.kubernetes.io/control-plane: ""
+---
+# Cilium (infrastructure/cilium) is the CNI, enforces the NetworkPolicies and
+# replaces kube-proxy, so Talos deploys neither its default CNI nor kube-proxy.
+# Both documents only exist on the control plane; the worker has nothing to drop.
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false

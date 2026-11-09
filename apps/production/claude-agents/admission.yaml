@@ -1,0 +1,168 @@
+# Baseline Pod Security still allows NFS and iSCSI volumes, which the
+# kubelet mounts from the node, outside the pod's NetworkPolicy. Only
+# volumes that stay inside the namespace are allowed.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: claude-agents-volumes
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+  validations:
+    - expression: >-
+        !has(object.spec.volumes) || object.spec.volumes.all(v,
+        has(v.configMap) || has(v.secret) || has(v.emptyDir) || has(v.projected) ||
+        has(v.downwardAPI) || has(v.persistentVolumeClaim) || has(v.ephemeral))
+      message: >-
+        Pods in claude-agents may use only configMap, secret, emptyDir,
+        projected, downwardAPI, persistentVolumeClaim and ephemeral volumes.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: claude-agents-volumes
+spec:
+  policyName: claude-agents-volumes
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: claude-agents
+---
+# The box is admin in claude-agents, so it could otherwise drop the egress
+# NetworkPolicy or the browser's ingress limits, or publish the browser's
+# screen through an Ingress without the GitHub sign-in, itself or through a
+# ServiceAccount it creates there. Flux keeps managing both kinds.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: claude-agents-network-policy
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [networking.k8s.io]
+        apiVersions: ["*"]
+        operations: [CREATE, UPDATE, DELETE]
+        resources: [networkpolicies, ingresses]
+  matchConditions:
+    - name: claude-service-accounts
+      expression: >-
+        request.userInfo.username.startsWith("system:serviceaccount:claude-code:") ||
+        request.userInfo.username.startsWith("system:serviceaccount:claude-agents:")
+  validations:
+    - expression: "false"
+      message: >-
+        NetworkPolicies and Ingresses in claude-agents keep the box away from
+        private data and the browser's screen behind the sign-in; change them
+        through Git.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: claude-agents-network-policy
+spec:
+  policyName: claude-agents-network-policy
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: claude-agents
+---
+# The admin role also covers kinds that controllers act on with far more
+# rights than the box: Flux applies Kustomizations and HelmReleases as
+# cluster-admin and pushes to main, ESO reads any OpenBao path, cert-manager
+# gets public certificates. The box may not write them; Flux keeps managing
+# whatever Git puts in claude-agents.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: claude-agents-controller-kinds
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - source.toolkit.fluxcd.io
+          - source.extensions.fluxcd.io
+          - kustomize.toolkit.fluxcd.io
+          - helm.toolkit.fluxcd.io
+          - notification.toolkit.fluxcd.io
+          - image.toolkit.fluxcd.io
+          - fluxcd.controlplane.io
+          - external-secrets.io
+          - generators.external-secrets.io
+          - cert-manager.io
+          - acme.cert-manager.io
+        apiVersions: ["*"]
+        operations: [CREATE, UPDATE, DELETE]
+        resources: ["*"]
+  matchConditions:
+    - name: claude-service-accounts
+      expression: >-
+        request.userInfo.username.startsWith("system:serviceaccount:claude-code:") ||
+        request.userInfo.username.startsWith("system:serviceaccount:claude-agents:")
+  validations:
+    - expression: "false"
+      message: >-
+        Flux, External Secrets and cert-manager objects act with more rights
+        than the box (cluster-admin, every OpenBao path, public certificates);
+        change them through Git.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: claude-agents-controller-kinds
+spec:
+  policyName: claude-agents-controller-kinds
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: claude-agents
+---
+# Cilium answers NodePorts and LoadBalancer ports on the nodes' LAN and
+# Tailscale addresses, which would put any pod here on the network without
+# the sign-in. Services the box creates stay inside the cluster.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: claude-agents-services
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [services]
+  matchConditions:
+    - name: claude-service-accounts
+      expression: >-
+        request.userInfo.username.startsWith("system:serviceaccount:claude-code:") ||
+        request.userInfo.username.startsWith("system:serviceaccount:claude-agents:")
+  validations:
+    - expression: >-
+        (!has(object.spec.type) || object.spec.type == "ClusterIP") &&
+        (!has(object.spec.externalIPs) || size(object.spec.externalIPs) == 0)
+      message: >-
+        Services in claude-agents must be ClusterIP without externalIPs; a
+        NodePort or LoadBalancer would answer on the nodes' LAN and Tailscale
+        addresses.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: claude-agents-services
+spec:
+  policyName: claude-agents-services
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: claude-agents

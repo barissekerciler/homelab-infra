@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: homelab-private
+  annotations:
+    # Deleting the namespace would delete the tenant's Kustomizations, and
+    # with them everything they applied.
+    kustomize.toolkit.fluxcd.io/prune: disabled

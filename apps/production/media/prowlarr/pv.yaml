@@ -1,0 +1,39 @@
+# Volumes provisioned by the cluster, written down so a rebuilt
+# cluster binds each one to the same claim.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-fbc052f9-b18a-4ddb-9878-ae259001f152
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-fbc052f9-b18a-4ddb-9878-ae259001f152-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1772981350013-634-org.democratic-csi.iscsi
+    volumeHandle: pvc-fbc052f9-b18a-4ddb-9878-ae259001f152
+  claimRef:
+    namespace: media
+    name: prowlarr-pvc
