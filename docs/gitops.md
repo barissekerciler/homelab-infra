@@ -27,7 +27,8 @@ flowchart TB
   end
 
   nas[("TrueNAS<br/>iSCSI and NFS volumes,<br/>SeaweedFS S3 for backups")]
-  offsite[("Hetzner Storage Box<br/>encrypted nightly copies")]
+  offsite[("Hetzner Storage Box<br/>encrypted copies")]
+  pi["Raspberry Pi<br/>Home Assistant, MQTT"]
   lan(["LAN and Tailscale"])
   internet(["Internet"])
   telegram(["Telegram"])
@@ -36,11 +37,14 @@ flowchart TB
   jenkins -- "commit status" --> infra
   infra -- "pulled every minute" --> flux
   flux -- "image automation:<br/>new tags" --> infra
+  flux -- "tenant's image automation" --> private
   private -- "Flux tenant" --> flux
   flux -- "applies" --> nodes
   secrets -- "Secrets" --> nodes
   nodes -- "democratic-csi" --> nas
-  nas -- "Cloud Sync" --> offsite
+  nas -- "Cloud Sync, nightly" --> offsite
+  nodes -- "Frigate recordings,<br/>every 5 seconds" --> offsite
+  nodes -- "Frigate: MQTT, restream" --- pi
   lan -- "Traefik" --> nodes
   internet -- "Cloudflare tunnel" --> nodes
   nodes -- "Grafana alerts" --> telegram
@@ -51,7 +55,7 @@ flowchart TB
 | `homelab` | Talos control plane, also runs workloads; Intel iGPU for transcoding and Frigate |
 | `homelab2` | Talos worker |
 | TrueNAS | iSCSI and NFS storage for the cluster (democratic-csi), SeaweedFS as the S3 staging area for database backups, nightly encrypted sync to a Hetzner Storage Box |
-| Raspberry Pi | AdGuard Home, Home Assistant, Vaultwarden behind Caddy (Docker Compose, managed separately) |
+| Raspberry Pi | AdGuard Home, Home Assistant, Mosquitto (MQTT for Frigate), Vaultwarden behind Caddy (Docker Compose, managed separately) |
 
 - **Flux** applies `clusters/homelab/` in dependency order: chart sources,
   cert-manager and External Secrets, the infrastructure, then the apps
@@ -416,6 +420,7 @@ flowchart LR
     swdata[("pool1/apps/seaweedfs<br/>stays local")]
     dumps[("pool1/apps/db-dumps")]
     appdata[("Immich and Nextcloud data")]
+    camrec[("cam-records<br/>plain copy, 30 days")]
   end
   hz[("Hetzner Storage Box<br/>rclone-encrypted<br/>10 daily snapshots")]
 
@@ -426,6 +431,7 @@ flowchart LR
   dumps -- "Cloud Sync 00:45" --> hz
   appdata -- "Cloud Sync 01:00 to 04:00" --> hz
   frigate -- "every 5 seconds" --> hz
+  frigate -- "every 5 seconds" --> camrec
 ```
 
 - **SeaweedFS is a staging area, not the backup.** It exists because
