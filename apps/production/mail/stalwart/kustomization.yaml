@@ -9,4 +9,3 @@ resources:
   - private-client-routes.yaml
   - stalwart-secret.yaml
   - stalwart-db-secret.yaml
-  - migrate.yaml
