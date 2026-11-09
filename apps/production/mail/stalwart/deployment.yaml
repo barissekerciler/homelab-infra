@@ -112,10 +112,6 @@ spec:
               value: https://stalwart.home.bariss.dev
             - name: STALWART_HOSTNAME
               value: mx.bariss.dev
-            # One start only: adds the permissions introduced after v1.0.0
-            # (passkeys in v1.1.0) to the default roles. Remove afterwards.
-            - name: STALWART_UPDATE_ROLE_PERMISSIONS
-              value: "true"
           ports:
             - name: smtp
               containerPort: 25

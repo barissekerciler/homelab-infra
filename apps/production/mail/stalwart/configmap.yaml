@@ -15,23 +15,3 @@ data:
         "variableName": "STALWART_DB_PASSWORD"
       }
     }
----
-# The v1 store for stalwart-migrate's --target. A ConfigMap of its own, so
-# Reloader does not restart the running v0.16 server while it is added.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: stalwart-config-v1
-data:
-  config.json: |
-    {
-      "@type": "PostgreSql",
-      "host": "postgres-rw.postgresql.svc.cluster.local",
-      "port": 5432,
-      "database": "stalwart_v1",
-      "authUsername": "stalwart",
-      "authSecret": {
-        "@type": "EnvironmentVariable",
-        "variableName": "STALWART_DB_PASSWORD"
-      }
-    }
