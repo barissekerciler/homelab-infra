@@ -160,7 +160,8 @@ def test_every_critical_prometheus_alert_is_forwarded():
     [forward] = [rule for rule in alert_rules() if rule["uid"] == "prometheus-alerts"]
     expr = forward["data"][0]["model"]["expr"]
     assert 'ALERTS{alertstate="firing",severity="critical"} or' in expr
-    assert 'severity="warning",namespace!~"jenkins|claude-agents|.+-dev"' in expr
+    # Jenkins is watched: a stuck pod there means CI is stuck.
+    assert 'severity="warning",namespace!~"claude-agents|.+-dev"' in expr
     assert forward["noDataState"] == "OK"
 
 

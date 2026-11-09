@@ -27,9 +27,11 @@ GRAFANA = "https://grafana.home.bariss.dev"
 
 # Prometheus' own rules (kube-prometheus-stack) that reach Telegram: every
 # critical one, and the warnings outside the namespaces where failing pods are
-# routine (CI builds, the Claude box, the tenant's -dev apps). The node
-# saturation warnings fire under normal load on these two nodes.
-QUIET_NAMESPACES = "jenkins|claude-agents|.+-dev"
+# routine (the Claude box, the tenant's -dev apps). Jenkins is not one: a pod
+# stuck for 15 minutes there (KubePodNotReady), the controller's or a build's,
+# means CI is stuck. The node saturation warnings fire under normal load on
+# these two nodes.
+QUIET_NAMESPACES = "claude-agents|.+-dev"
 QUIET_ALERTS = "NodeSystemSaturation|NodeDiskIOSaturation|NodeMemoryMajorPagesFaults"
 # Labels worth reading in a forwarded alert, in this order; the namespace is
 # in its summary.
