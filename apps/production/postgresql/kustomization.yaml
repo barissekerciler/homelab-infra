@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: postgresql
+# The main cluster `postgres`, the one that is backed up (README.md), and its
+# databases. What both clusters share (namespace, password store, superuser,
+# metrics) is apps/base/postgresql, applied before this by its own Flux
+# Kustomization. The pantry is apps/dev/postgresql.
+resources:
+  - ../../base/postgresql/cluster
+  - backups.yaml
+  - backup-copy.yaml
+  - cnpg-backups-s3-secret.yaml
+  - databases
+patches:
+  - path: cluster.yaml

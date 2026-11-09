@@ -1,0 +1,76 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dispatcharr-stream-settings-v6
+  annotations:
+    # Recreate the Job when its image changes; a Job's pod template is immutable.
+    kustomize.toolkit.fluxcd.io/force: enabled
+  labels:
+    app: dispatcharr
+    component: stream-settings-init
+spec:
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: dispatcharr
+        component: stream-settings-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: configure
+          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          imagePullPolicy: Always
+          command:
+            - /bin/sh
+            - -lc
+            - |
+              set -eu
+              attempt=0
+              while [ "$attempt" -lt 60 ]; do
+                if /dispatcharrpy/bin/python /app/manage.py shell -c 'from core.models import CoreSettings, StreamProfile; stable_profile, created=StreamProfile.objects.update_or_create(name="Stable AAC", defaults={"command":"ffmpeg", "parameters":"-fflags +discardcorrupt+genpts -probesize 2M -analyzeduration 1M -user_agent {userAgent} -i {streamUrl} -map 0:v:0 -map 0:a:0? -c:v copy -c:a aac -b:a 192k -ac 2 -af aresample=async=1000:first_pts=0 -max_muxing_queue_size 4096 -flush_packets 1 -mpegts_flags +pat_pmt_at_frames+resend_headers+initial_discontinuity -f mpegts pipe:1", "locked":False, "is_active":True, "user_agent_id":1}); stream_obj=CoreSettings.objects.get(key="stream_settings"); stream_settings=dict(stream_obj.value or {}); old_profile=stream_settings.get("default_stream_profile"); stream_settings["default_stream_profile"]=stable_profile.pk; stream_obj.value=stream_settings; stream_obj.save(update_fields=["value"]); proxy_obj=CoreSettings.objects.get(key="proxy_settings"); proxy_settings=dict(proxy_obj.value or {}); old_speed=proxy_settings.get("buffering_speed"); proxy_settings["buffering_speed"]=0; proxy_obj.value=proxy_settings; proxy_obj.save(update_fields=["value"]); print("stable_profile", stable_profile.pk, "created", created); print("default_stream_profile", old_profile, "->", stream_settings["default_stream_profile"]); print("buffering_speed", old_speed, "->", proxy_settings["buffering_speed"]); import runpy; runpy.run_path("/policy/configure-stream-policy.py", run_name="__main__")'; then
+                  exit 0
+                fi
+                attempt=$((attempt + 1))
+                sleep 5
+              done
+              echo "Dispatcharr stream settings were not ready after 300 seconds" >&2
+              exit 1
+          volumeMounts:
+            - name: stream-policy
+              mountPath: /policy
+              readOnly: true
+          env:
+            - name: DISPATCHARR_ENV
+              value: "modular"
+            - name: DJANGO_SETTINGS_MODULE
+              value: "dispatcharr.settings"
+            - name: POSTGRES_HOST
+              value: "postgres-rw.postgresql.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "dispatcharr"
+            - name: POSTGRES_USER
+              value: "dispatcharr"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dispatcharr-db
+                  key: password
+            - name: REDIS_HOST
+              value: "redis.redis.svc.cluster.local"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_DB
+              value: "2"
+          resources:
+            requests:
+              cpu: 25m
+            limits:
+              cpu: 500m
+      volumes:
+        - name: stream-policy
+          configMap:
+            name: dispatcharr-stream-policy

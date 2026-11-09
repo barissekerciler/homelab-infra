@@ -1,0 +1,31 @@
+# Only 8971 (Frigate's authenticated UI/API). Port 5000 and the go2rtc API stay in the
+# pod; the RTSP restream for Home Assistant is the pod's host port 8554 (deployment.yaml).
+apiVersion: v1
+kind: Service
+metadata:
+  name: frigate
+  labels:
+    app: frigate
+spec:
+  selector:
+    app: frigate
+  ports:
+    - name: http
+      port: 8971
+      targetPort: 8971
+---
+# The NAS mirror's WebDAV server, for the Frigate pod's nas-push sidecar only
+# (networkpolicy.yaml).
+apiVersion: v1
+kind: Service
+metadata:
+  name: frigate-nas-mirror
+  labels:
+    app: frigate-nas-mirror
+spec:
+  selector:
+    app: frigate-nas-mirror
+  ports:
+    - name: webdav
+      port: 8080
+      targetPort: 8080

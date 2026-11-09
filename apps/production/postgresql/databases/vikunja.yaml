@@ -1,0 +1,51 @@
+# Vikunja (apps/production/vikunja).
+# Role vikunja; its password is generated once into OpenBao
+# secret/postgresql/vikunja-db (apps/base/postgresql/passwords.yaml) and
+# read back by vikunja-db-secret.yaml.
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: vikunja-db
+  namespace: postgresql
+spec:
+  refreshInterval: 1h
+  updatePolicy: IfNotExists
+  deletionPolicy: None
+  secretStoreRefs:
+    - kind: SecretStore
+      name: openbao-passwords
+  selector:
+    generatorRef:
+      apiVersion: generators.external-secrets.io/v1alpha1
+      kind: Password
+      name: role-password
+  data:
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: postgresql/vikunja-db
+          property: password
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: vikunja
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: vikunja
+  login: true
+  passwordSecret:
+    name: vikunja-db
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: vikunja
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: vikunja
+  owner: vikunja

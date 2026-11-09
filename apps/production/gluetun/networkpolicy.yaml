@@ -1,0 +1,25 @@
+# The proxy has no login, so only its clients may connect: Traefik (the
+# proxy.home.bariss.dev route) and the namespaces labelled
+# home.bariss.dev/vpn-proxy-client: "true". A tenant namespace that browses
+# through the VPN sets that label in its own repository.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gluetun
+spec:
+  podSelector:
+    matchLabels:
+      app: gluetun
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+        - namespaceSelector:
+            matchLabels:
+              home.bariss.dev/vpn-proxy-client: "true"
+      ports:
+        - protocol: TCP
+          port: 8888

@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: homelab-private
+# The private tenant: apps that live in a private repository. Its
+# Kustomizations build ./production and ./dev of that repository as the
+# ServiceAccount below.
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - git-ssh-secret.yaml
+  - sync.yaml
+
+components:
+  - ../../infrastructure/goldilocks/namespace-defaults

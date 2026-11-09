@@ -1,0 +1,86 @@
+# Grafana at https://grafana.home.bariss.dev (LAN and Tailscale only) with its
+# own login; the admin login is in the grafana-admin Secret. Grafana Alerting
+# sends the alerts to Telegram (../alerting).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana
+spec:
+  releaseName: grafana
+  chart:
+    spec:
+      chart: grafana
+      version: 14.0.1
+      sourceRef:
+        kind: HelmRepository
+        name: grafana-community
+        namespace: flux-system
+  interval: 1h0m0s
+  # Every start migrates a fresh SQLite database.
+  timeout: 10m0s
+  dependsOn:
+    - name: kube-prometheus-stack
+  values:
+    admin:
+      existingSecret: grafana-admin
+    # No volume: the admin login, datasources, dashboards and alerting come
+    # from Git on every start. Logins, anything saved in the UI, silences and
+    # the alerts' state are lost on restart, so an alert firing then sends
+    # once more.
+    persistence:
+      enabled: false
+    # The Telegram contact points read these (../alerting/contact-points.yaml).
+    envValueFrom:
+      TELEGRAM_BOT_TOKEN:
+        secretKeyRef:
+          name: grafana-telegram
+          key: bot-token
+      TELEGRAM_CHAT_ID:
+        secretKeyRef:
+          name: grafana-telegram
+          key: chat-id
+    # Restart when a Secret it reads changes.
+    annotations:
+      reloader.stakater.com/auto: "true"
+    resources:
+      requests:
+        cpu: 25m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    sidecar:
+      resources:
+        requests:
+          cpu: 5m
+          memory: 96Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+      # Datasources and dashboards come from kube-prometheus-stack ConfigMaps
+      # and ../dashboards, alerting from ../alerting.
+      datasources:
+        enabled: true
+      dashboards:
+        enabled: true
+        folderAnnotation: grafana_folder
+        provider:
+          foldersFromFilesStructure: true
+      alerts:
+        enabled: true
+        label: grafana_alert
+        labelValue: "1"
+    grafana.ini:
+      server:
+        root_url: https://grafana.home.bariss.dev
+      analytics:
+        reporting_enabled: false
+        check_for_updates: false
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+        - grafana.home.bariss.dev

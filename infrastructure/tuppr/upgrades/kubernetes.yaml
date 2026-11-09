@@ -1,0 +1,19 @@
+# Kubernetes stays on the minor Flux and cert-manager support (1.36); the image
+# policy only follows its patches.
+apiVersion: tuppr.home-operations.com/v1alpha1
+kind: KubernetesUpgrade
+metadata:
+  name: kubernetes
+spec:
+  kubernetes:
+    version: v1.36.6 # {"$imagepolicy": "flux-system:kubelet:tag"}
+  healthChecks:
+    - apiVersion: v1
+      kind: Node
+      expr: status.conditions.filter(c, c.type == "Ready").all(c, c.status == "True")
+      description: every node Ready
+  maintenance:
+    windows:
+      - start: "30 4 * * *"
+        duration: 2h
+        timezone: Europe/Berlin

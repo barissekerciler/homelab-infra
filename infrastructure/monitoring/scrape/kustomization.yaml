@@ -1,0 +1,9 @@
+# Scrape targets outside the cluster. Prometheus picks up ScrapeConfigs from
+# every namespace (scrapeConfigSelectorNilUsesHelmValues: false).
+# Applied by infrastructure-configs (../../configs), after the chart's CRDs.
+# Tenants add their own targets in their repositories.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - truenas.yaml

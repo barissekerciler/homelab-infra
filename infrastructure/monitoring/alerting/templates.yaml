@@ -1,0 +1,20 @@
+# The Telegram message: one line per firing alert with its description, the
+# rule's link once, then the resolved ones. Telegram reads it as HTML, so
+# annotations stay free of <, > and &.
+apiVersion: 1
+templates:
+  - orgId: 1
+    name: telegram
+    template: |
+      {{ define "telegram.message" -}}
+      {{ range .Alerts.Firing -}}
+      {{ if eq .Labels.severity "critical" }}🔴{{ else }}🟡{{ end }} <b>{{ or .Annotations.summary .Labels.alertname }}</b>
+      {{ with .Annotations.description }}{{ . }}
+      {{ end }}
+      {{ end -}}
+      {{ if .Alerts.Firing }}{{ with .CommonAnnotations.runbook_url }}{{ . }}
+      {{ end }}{{ end -}}
+      {{ range .Alerts.Resolved -}}
+      ✅ {{ or .Annotations.summary .Labels.alertname }}
+      {{ end -}}
+      {{ end }}

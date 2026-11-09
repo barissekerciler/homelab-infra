@@ -1,0 +1,9 @@
+# Applied by infrastructure-configs (../../configs), after tuppr's CRDs.
+# Both kinds are cluster-scoped. Flux image automation (flux-system-tuppr in
+# infrastructure/image-update-automation) moves the versions to the newest
+# patch of the current minor; a new minor is a manual change here.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - talos.yaml
+  - kubernetes.yaml

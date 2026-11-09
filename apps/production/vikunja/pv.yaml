@@ -1,0 +1,38 @@
+# Attachments, avatars and project backgrounds. Tasks live in the cluster PostgreSQL.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-5e57c743-a43a-43b6-8db2-04aba989007b
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-5e57c743-a43a-43b6-8db2-04aba989007b-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1792318885743-1551-org.democratic-csi.iscsi
+    volumeHandle: pvc-5e57c743-a43a-43b6-8db2-04aba989007b
+  claimRef:
+    namespace: vikunja
+    name: vikunja-files

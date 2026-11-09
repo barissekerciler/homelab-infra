@@ -1,0 +1,111 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: democratic-csi-nfs
+spec:
+  releaseName: democratic-csi-nfs
+  chart:
+    spec:
+      chart: democratic-csi
+      sourceRef:
+        kind: HelmRepository
+        name: democratic-csi
+        namespace: flux-system
+      version: 0.15.1
+  interval: 1h0m0s
+  values:
+    # Driver credentials come from the SOPS Secret in driver-config-secret.yaml.
+    controller:
+      # sha256 of the driver config. The controller reads it only at startup,
+      # so change this value with the config to roll the controller. New
+      # shares are limited to the nodes (nfs.shareAllowedNetworks).
+      podAnnotations:
+        checksum/secret: ff3462fb3473adbe2eec7fd7713ef5f440af639e37f1e1b3ba1e8edd9a8d00bf
+      hostAliases: '[{"ip":"10.0.0.203","hostnames":["nas.home.bariss.dev"]}]'
+      driver:
+        enabled: true
+        image:
+          registry: ghcr.io/democratic-csi/democratic-csi
+          # Stable release for TrueNAS 25.x. Newer builds need TrueNAS 27.
+          tag: v1.9.5@sha256:fc3b7d7ed3a616714139525075312758e23a5d425ffb539ad12c9bd20fb6001f
+        resources:
+          requests:
+            cpu: 10m
+          limits:
+            cpu: 500m
+      externalAttacher:
+        resources:
+          requests:
+            cpu: 5m
+          limits:
+            cpu: 200m
+      externalProvisioner:
+        resources:
+          requests:
+            cpu: 5m
+          limits:
+            cpu: 200m
+      externalResizer:
+        resources:
+          requests:
+            cpu: 5m
+          limits:
+            cpu: 200m
+      externalSnapshotter:
+        resources:
+          requests:
+            cpu: 5m
+          limits:
+            cpu: 200m
+    node:
+      # Keep the existing pod checksum.
+      podAnnotations:
+        checksum/secret: 17bb963f150d7c8513fe2915484174cc5f7420b18f9ab9c3a696e8d284db2183
+      hostAliases: '[{"ip":"10.0.0.203","hostnames":["nas.home.bariss.dev"]}]'
+      kubeletHostPath: /var/lib/kubelet
+      # NodeStage runs the NFS mounts in the driver container.
+      driver:
+        image:
+          registry: ghcr.io/democratic-csi/democratic-csi
+          # Same release as the controller.
+          tag: v1.9.5@sha256:fc3b7d7ed3a616714139525075312758e23a5d425ffb539ad12c9bd20fb6001f
+        resources:
+          requests:
+            cpu: 10m
+          limits:
+            cpu: "1"
+      driverRegistrar:
+        resources:
+          requests:
+            cpu: 5m
+          limits:
+            cpu: 100m
+      cleanup:
+        resources:
+          requests:
+            cpu: 5m
+          limits:
+            cpu: 100m
+    csiProxy:
+      resources:
+        requests:
+          cpu: 5m
+        limits:
+          cpu: 200m
+    csiDriver:
+      name: org.democratic-csi.nfs
+    storageClasses:
+      - name: freenas-nfs-csi
+        defaultClass: false
+        reclaimPolicy: Retain
+        volumeBindingMode: Immediate
+        allowVolumeExpansion: true
+        parameters:
+          fsType: nfs
+        mountOptions:
+          - noatime
+          - nfsvers=4.1
+    driver:
+      existingConfigSecret: democratic-csi-nfs-driver-config
+      config:
+        driver: freenas-api-nfs

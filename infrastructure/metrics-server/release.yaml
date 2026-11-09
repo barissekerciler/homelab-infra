@@ -1,0 +1,28 @@
+# Talos ships no metrics-server. kubectl top and the HorizontalPodAutoscaler
+# read pod and node usage from it.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metrics-server
+spec:
+  releaseName: metrics-server
+  chart:
+    spec:
+      chart: metrics-server
+      sourceRef:
+        kind: HelmRepository
+        name: metrics-server
+        namespace: flux-system
+      version: 3.14.0
+  interval: 1h0m0s
+  install:
+    remediation:
+      retries: 3
+  values:
+    # Talos kubelets serve a self-signed certificate.
+    args:
+      - --kubelet-insecure-tls
+    resources:
+      requests:
+        cpu: 10m
+        memory: 48Mi

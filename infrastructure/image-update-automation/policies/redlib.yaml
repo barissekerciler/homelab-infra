@@ -1,0 +1,18 @@
+# The fork tags images sha-<commit>, which do not sort by age, so follow
+# latest and write its digest: the marker in apps/production/redlib pins
+# latest@sha256 and changes whenever the fork publishes a new latest.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: redlib
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: redlib
+  filterTags:
+    pattern: '^latest$'
+  policy:
+    alphabetical:
+      order: asc
+  digestReflectionPolicy: Always
+  interval: 1h

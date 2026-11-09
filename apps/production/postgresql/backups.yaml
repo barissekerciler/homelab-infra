@@ -1,0 +1,55 @@
+# Backups of the cluster (cluster.yaml) by the Barman Cloud plugin to the
+# bucket cnpg-backups on SeaweedFS, a TrueNAS app (truenas/apps/seaweedfs):
+# every WAL segment as it fills, a base backup every night, kept 14 days.
+# Restore and point-in-time recovery: README.md.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: seaweedfs
+spec:
+  retentionPolicy: 14d
+  configuration:
+    destinationPath: s3://cnpg-backups/
+    # S3 on the NAS, plain HTTP on the LAN.
+    endpointURL: http://10.0.0.203:8333
+    s3Credentials:
+      accessKeyId:
+        name: cnpg-backups-s3
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: cnpg-backups-s3
+        key: AWS_SECRET_ACCESS_KEY
+      region:
+        name: cnpg-backups-s3
+        key: AWS_REGION
+    wal:
+      compression: zstd
+      maxParallel: 4
+    data:
+      compression: gzip
+      jobs: 2
+      # A spread checkpoint would take checkpoint_timeout x 0.9 (27 minutes).
+      immediateCheckpoint: true
+  instanceSidecarConfiguration:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: postgres-nightly
+spec:
+  # Seconds first; the operator runs in UTC: 02:00 UTC = 03:00/04:00 Berlin.
+  schedule: "0 0 2 * * *"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: postgres
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

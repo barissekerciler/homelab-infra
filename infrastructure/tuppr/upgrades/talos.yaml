@@ -1,0 +1,23 @@
+# Talos (kernel, OS and extensions in one image). tuppr keeps each node's
+# Image Factory schematic and swaps only the version. Patches only: the image
+# policy stays inside 1.14; the next minor is changed here by hand, one minor
+# at a time.
+apiVersion: tuppr.home-operations.com/v1alpha1
+kind: TalosUpgrade
+metadata:
+  name: cluster
+spec:
+  talos:
+    version: v1.14.5 # {"$imagepolicy": "flux-system:talos:tag"}
+  healthChecks:
+    - apiVersion: v1
+      kind: Node
+      expr: status.conditions.filter(c, c.type == "Ready").all(c, c.status == "True")
+      description: every node Ready
+  # Nightly, after Jellyfin's 03:00 trickplay run. homelab is the only control
+  # plane, so its reboot takes the Kubernetes API away for a few minutes.
+  maintenance:
+    windows:
+      - start: "30 4 * * *"
+        duration: 2h
+        timezone: Europe/Berlin

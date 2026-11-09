@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  name: nextcloud-html
+spec:
+  storageClassName: freenas-nfs-csi
+  volumeName: nextcloud-html-nfs-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+# The official chart's volume: code, config, apps from the app store and
+# themes. On iSCSI, so the image's entrypoint can copy a new version's code
+# as root and quickly; the NFS export maps root to nobody.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  name: nextcloud-main
+spec:
+  volumeName: pvc-f7ccbd5e-8b0e-4ee2-9f1a-545fadbf0b9b
+  storageClassName: freenas-iscsi-csi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  name: nextcloud-data
+spec:
+  storageClassName: freenas-nfs-csi
+  volumeName: nextcloud-data-nfs-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti

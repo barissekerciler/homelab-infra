@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radarr-nfs-content-pv
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    app: radarr
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-nfs-csi
+  nfs:
+    server: 10.0.0.203
+    path: /mnt/pool1/media/radarr
+  mountOptions:
+    - noatime
+    - nfsvers=4.1
+    - nconnect=4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-7d5d4786-9c3d-4ace-9633-2455ba046a8e
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-7d5d4786-9c3d-4ace-9633-2455ba046a8e-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1773793282077-5367-org.democratic-csi.iscsi
+    volumeHandle: pvc-7d5d4786-9c3d-4ace-9633-2455ba046a8e
+  claimRef:
+    namespace: media
+    name: radarr-iscsi-config-pvc

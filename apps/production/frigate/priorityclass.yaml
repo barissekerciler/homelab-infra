@@ -1,0 +1,11 @@
+# homelab's CPU requests are nearly full. Frigate and its NAS mirror use this
+# class, so the scheduler evicts a lower-priority pod rather than leave the
+# camera unrecorded. Pods without a class have priority 0. Cluster-scoped.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: frigate-camera
+value: 100000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: Security camera recording beats other homelab workloads.

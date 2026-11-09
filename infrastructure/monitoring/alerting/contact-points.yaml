@@ -1,0 +1,26 @@
+# Both contact points post to the same Telegram chat; warnings arrive without
+# a sound. Grafana fills ${...} from its environment: the grafana-telegram
+# Secret (../grafana/telegram-secret.yaml).
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: telegram-critical
+    receivers:
+      - uid: telegram-critical
+        type: telegram
+        settings:
+          bottoken: ${TELEGRAM_BOT_TOKEN}
+          chatid: ${TELEGRAM_CHAT_ID}
+          message: '{{ template "telegram.message" . }}'
+          disable_web_page_preview: true
+  - orgId: 1
+    name: telegram-warning
+    receivers:
+      - uid: telegram-warning
+        type: telegram
+        settings:
+          bottoken: ${TELEGRAM_BOT_TOKEN}
+          chatid: ${TELEGRAM_CHAT_ID}
+          message: '{{ template "telegram.message" . }}'
+          disable_web_page_preview: true
+          disable_notifications: true

@@ -1,0 +1,51 @@
+# Stalwart (apps/production/mail/stalwart): its settings and the mail itself.
+# Role stalwart; its password is generated once into OpenBao
+# secret/postgresql/stalwart-db (apps/base/postgresql/passwords.yaml) and
+# read back by stalwart-db-secret.yaml.
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: stalwart-db
+  namespace: postgresql
+spec:
+  refreshInterval: 1h
+  updatePolicy: IfNotExists
+  deletionPolicy: None
+  secretStoreRefs:
+    - kind: SecretStore
+      name: openbao-passwords
+  selector:
+    generatorRef:
+      apiVersion: generators.external-secrets.io/v1alpha1
+      kind: Password
+      name: role-password
+  data:
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: postgresql/stalwart-db
+          property: password
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: stalwart
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: stalwart
+  login: true
+  passwordSecret:
+    name: stalwart-db
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: stalwart
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: stalwart
+  owner: stalwart

@@ -1,0 +1,47 @@
+# The NAS copy of Frigate's media (nas-mirror-deployment.yaml): the TrueNAS
+# dataset pool1/k8s/static-disks/cam-records, exported to 10.0.0.150, .151
+# and .87 only. Only the mirror pod mounts it; Frigate itself keeps
+# recording on its node's own disk (an emptyDir) when the NAS is down.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: frigate-nas
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  capacity:
+    storage: 150Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-nfs-csi
+  nfs:
+    server: 10.0.0.203
+    path: /mnt/pool1/k8s/static-disks/cam-records
+  # soft: after 3 retries (timeo=150 is 15 s) a hung NAS returns an I/O error
+  # instead of wedging the mirror; rclone tries again on its next run.
+  mountOptions:
+    - noatime
+    - nfsvers=4.1
+    - soft
+    - timeo=150
+    - retrans=3
+  claimRef:
+    namespace: frigate
+    name: frigate-nas
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frigate-nas
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  volumeName: frigate-nas
+  storageClassName: freenas-nfs-csi
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 150Gi

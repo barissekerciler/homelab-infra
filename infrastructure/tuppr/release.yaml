@@ -1,0 +1,39 @@
+# tuppr upgrades Talos and Kubernetes from the TalosUpgrade and
+# KubernetesUpgrade in upgrades/ (applied by infrastructure-configs, after this
+# chart's CRDs exist). It drives each upgrade from the other node, one node at
+# a time, health-gated. Its pods reach the Talos API through the
+# kubernetesTalosAPIAccess role in talos/patches/controlplane.yaml.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tuppr
+spec:
+  releaseName: tuppr
+  chart:
+    spec:
+      chart: tuppr
+      sourceRef:
+        kind: HelmRepository
+        name: home-operations
+        namespace: flux-system
+      version: 0.5.12
+  interval: 1h0m0s
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    rbac:
+      # The chart's default lets health checks read every resource, Secrets
+      # included; the checks in upgrades/ only look at Nodes.
+      healthCheckRules:
+        - apiGroups: [""]
+          resources: ["nodes"]
+          verbs: ["get", "list", "watch"]

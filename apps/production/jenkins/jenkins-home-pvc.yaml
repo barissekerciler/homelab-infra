@@ -1,0 +1,15 @@
+# Jenkins home on iSCSI, so the controller runs on either node.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  name: jenkins-home
+spec:
+  volumeName: pvc-f59e8157-d234-4073-9eba-a26ac2378f7b
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: freenas-iscsi-csi
+  resources:
+    requests:
+      storage: 20Gi

@@ -1,0 +1,16 @@
+# The browser pod's data: the Chromium profile (cookies and site logins),
+# the Playwright browser build and screenshots.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: claude-browser-data
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  volumeName: pvc-4a371959-152f-4f64-9c97-d83269eec779
+  storageClassName: freenas-iscsi-csi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

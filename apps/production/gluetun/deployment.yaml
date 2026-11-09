@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gluetun
+  annotations:
+    reloader.stakater.com/auto: "true"
+  labels:
+    app: gluetun
+spec:
+  selector:
+    matchLabels:
+      app: gluetun
+  template:
+    metadata:
+      labels:
+        app: gluetun
+    spec:
+      initContainers:
+        - name: update-mullvad-servers
+          image: qmcgaw/gluetun:v3.41.3@sha256:fa19cc76b2af13d57a8d3dc3066f2ada061b1c761b8aecf989b3877c0486e027
+          args:
+            - update
+            - -enduser
+            - -providers
+            - mullvad
+            # Mullvad retired OpenVPN; the bundled list still counts those servers.
+            - -minratio
+            - "0.75"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: vpn-server-data
+              mountPath: /gluetun
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+      containers:
+        - name: gluetun
+          image: qmcgaw/gluetun:v3.41.3@sha256:fa19cc76b2af13d57a8d3dc3066f2ada061b1c761b8aecf989b3877c0486e027
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+            privileged: true
+          ports:
+            - containerPort: 8888
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: mullvad
+            - name: VPN_TYPE
+              value: wireguard
+            - name: DOT
+              value: "off"
+            - name: HTTPPROXY
+              value: "on"
+            - name: HTTPPROXY_LISTENING_ADDRESS
+              value: :8888
+            # Gluetun's own firewall accepts new connections only for eth0's
+            # on-link network, which under Cilium is the gateway's /32: open
+            # the proxy port to other pods (the NetworkPolicies decide who).
+            - name: FIREWALL_INPUT_PORTS
+              value: "8888"
+            - name: UPDATER_PERIOD
+              value: 480h
+          envFrom:
+            - secretRef:
+                name: mullvad-secret
+          volumeMounts:
+            - name: vpn-server-data
+              mountPath: /gluetun
+          readinessProbe:
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+      volumes:
+        - name: vpn-server-data
+          emptyDir: {}

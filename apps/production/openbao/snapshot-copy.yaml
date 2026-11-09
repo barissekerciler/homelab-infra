@@ -1,0 +1,142 @@
+# Offsite copy of the raft snapshots. SeaweedFS keeps objects inside its own
+# volume files, so the snapshots cannot be picked out of its dataset. This
+# nightly job copies the bucket openbao-snapshots as plain files into
+# openbao/ on the TrueNAS dataset pool1/apps/db-dumps, which the Cloud Sync
+# task "Hetzner: database dumps" uploads, rclone-encrypted, at 00:45 Berlin
+# time. A restore then needs only one file and the seal key, no SeaweedFS
+# (whose keys come from OpenBao).
+#
+# The share is the one apps/production/postgresql/backup-copy.yaml mounts
+# (into postgresql/), owned by 999:999.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: openbao-db-dumps-nfs-pv
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    app: openbao
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-nfs-csi
+  nfs:
+    server: 10.0.0.203
+    path: /mnt/pool1/apps/db-dumps
+  mountOptions:
+    - noatime
+    - nfsvers=4.1
+  # Only this claim may bind it; democratic-csi claims get their own volumes.
+  claimRef:
+    namespace: openbao
+    name: db-dumps
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-dumps
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  storageClassName: freenas-nfs-csi
+  volumeName: openbao-db-dumps-nfs-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: openbao-snapshot-copy
+  labels:
+    app: openbao
+    task: snapshot-copy
+spec:
+  # 20 minutes after the chart's snapshot at 23:05 UTC (release.yaml). In
+  # winter that is 00:25 Berlin, before the 00:45 upload; in summer (01:25)
+  # the snapshot reaches Hetzner the night after.
+  schedule: "25 23 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app: openbao
+            task: snapshot-copy
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: copy
+              image: rclone/rclone:1.75.2
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+              args:
+                - |
+                  set -eu
+                  mkdir -p /dumps/openbao
+                  rclone copy --stats-one-line -v seaweedfs:openbao-snapshots /dumps/openbao
+                  # Prune only while new snapshots arrive: a stopped agent must
+                  # not empty the folder, and with it the Hetzner copy.
+                  if [ -z "$(find /dumps/openbao -type f -name '*.snapshot' -mtime -2)" ]; then
+                    echo "no OpenBao snapshot from the last two days" >&2
+                    exit 1
+                  fi
+                  find /dumps/openbao -type f -name '*.snapshot' -mtime +$((KEEP_DAYS - 1)) -delete
+                  ls -l /dumps/openbao
+              env:
+                - name: KEEP_DAYS
+                  value: "30"
+                - name: HOME
+                  value: /tmp
+                # The rclone remote "seaweedfs", read with the bucket's own
+                # key (AWS_* from openbao-snapshots-s3).
+                - name: RCLONE_CONFIG_SEAWEEDFS_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_SEAWEEDFS_PROVIDER
+                  value: SeaweedFS
+                - name: RCLONE_CONFIG_SEAWEEDFS_ENDPOINT
+                  value: http://10.0.0.203:8333
+                - name: RCLONE_CONFIG_SEAWEEDFS_ENV_AUTH
+                  value: "true"
+              envFrom:
+                - secretRef:
+                    name: openbao-snapshots-s3
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              volumeMounts:
+                - name: dumps
+                  mountPath: /dumps
+          volumes:
+            - name: dumps
+              persistentVolumeClaim:
+                claimName: db-dumps

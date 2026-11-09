@@ -1,0 +1,106 @@
+# Claude Code running 24/7 on the Claude subscription, steered from the
+# Claude app and claude.ai/code through Remote Control. It only dials out;
+# nothing listens. See README.md for the one-time sign-in.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-code
+  labels:
+    app: claude-code
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # One writer for the RWO home volume.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: claude-code
+  template:
+    metadata:
+      labels:
+        app: claude-code
+    spec:
+      serviceAccountName: claude-code
+      hostname: homelab-claude-agent
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      initContainers:
+        # The home volume hides the image's /home/vscode; copy it in once.
+        - name: seed-home
+          image: mcr.microsoft.com/devcontainers/python:3.2.6-3.13-trixie@sha256:5ea7e72d3c1beb6aefdfea8001483345c39af4898e22f2c543deb6a00802ede4
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -e /seed/.box-seeded ]; then
+                cp -a /home/vscode/. /seed/ && touch /seed/.box-seeded
+              fi
+              chown 1000:1000 /seed
+          securityContext:
+            runAsUser: 0
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: home
+              mountPath: /seed
+      containers:
+        - name: claude-code
+          image: mcr.microsoft.com/devcontainers/python:3.2.6-3.13-trixie@sha256:5ea7e72d3c1beb6aefdfea8001483345c39af4898e22f2c543deb6a00802ede4
+          command:
+            - bash
+            - /opt/box/start.sh
+          # vscode, with passwordless sudo, so Claude can install what it needs.
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          workingDir: /home/vscode
+          env:
+            - name: HOME
+              value: /home/vscode
+            # The image's PATH with the home volume's tools first.
+            - name: PATH
+              value: /home/vscode/.local/bin:/home/vscode/.local/share/mise/shims:/home/vscode/.local/node/bin:/usr/local/python/current/bin:/usr/local/py-utils/bin:/usr/local/share/nvm/current/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+            - name: LANG
+              value: C.UTF-8
+            - name: TERM
+              value: xterm-256color
+            # The box and its sessions show up as homelab-claude-agent… in the
+            # Claude app.
+            - name: CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX
+              value: homelab-claude-agent
+            # Starting mode for new sessions: auto runs commands without asking
+            # and lets the classifier stop risky ones. Changeable per session.
+            - name: CLAUDE_PERMISSION_MODE
+              value: auto
+            # No claude.ai connectors (Gmail, Drive, Calendar and the rest) on
+            # the box; GitHub goes through its own gh account.
+            - name: ENABLE_CLAUDEAI_MCP_SERVERS
+              value: "false"
+          resources:
+            requests:
+              cpu: 150m
+              memory: 1536Mi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          volumeMounts:
+            - name: home
+              mountPath: /home/vscode
+            - name: box
+              mountPath: /opt/box
+              readOnly: true
+      volumes:
+        - name: home
+          persistentVolumeClaim:
+            claimName: claude-code-home
+        - name: box
+          configMap:
+            name: claude-code-box
+            defaultMode: 0555

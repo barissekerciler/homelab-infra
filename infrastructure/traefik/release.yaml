@@ -1,0 +1,78 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  releaseName: traefik
+  chart:
+    spec:
+      chart: traefik
+      version: 42.1.3
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: flux-system
+  interval: 1h0m0s
+  # The chart's CRDs change between Traefik minors (v3.7); Helm skips them on
+  # upgrade unless told otherwise.
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    # Talos has no ServiceLB. One Traefik pod per node takes 80/443/465/993
+    # as hostPorts, so every node address (LAN 10.0.0.150/.151 and the nodes'
+    # Tailscale addresses) answers itself, and Traefik sees the client's own
+    # address. Cilium serves the hostPorts on the devices its release lists
+    # (infrastructure/cilium). cloudflared reaches it through the ClusterIP
+    # Service.
+    deployment:
+      kind: DaemonSet
+    service:
+      enabled: true
+      single: true
+      # Chart 42 takes the type from service.spec only; a top-level
+      # service.type is ignored and the Service becomes a LoadBalancer with
+      # NodePorts on every node address.
+      spec:
+        type: ClusterIP
+        ipFamilyPolicy: SingleStack
+        ipFamilies:
+          - IPv4
+    ports:
+      web:
+        port: 8000
+        exposedPort: 80
+        hostPort: 80
+        forwardedHeaders:
+          trustedIPs:
+            - 10.42.0.0/16
+      websecure:
+        port: 8443
+        exposedPort: 443
+        hostPort: 443
+        # Traefik v3 cuts request bodies off after 60s by default. Immich and
+        # Nextcloud uploads can take far longer.
+        transport:
+          respondingTimeouts:
+            readTimeout: 0s
+      submissions:
+        port: 465
+        exposedPort: 465
+        hostPort: 465
+        protocol: TCP
+        expose:
+          default: true
+      imaps:
+        port: 993
+        exposedPort: 993
+        hostPort: 993
+        protocol: TCP
+        expose:
+          default: true
+    resources:
+      requests:
+        cpu: 25m
+      limits:
+        cpu: "1"

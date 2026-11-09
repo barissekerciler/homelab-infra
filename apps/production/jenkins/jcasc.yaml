@@ -1,0 +1,75 @@
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - gitHubApp:
+              appID: "3452704"
+              id: "github-app"
+              privateKey: "${GITHUB_APP_PRIVATE_KEY}"
+          # The GitHub App's webhook secret. /github-webhook/ is public through
+          # the Cloudflare tunnel, so Jenkins rejects deliveries without a valid
+          # X-Hub-Signature-256.
+          - string:
+              id: "github-webhook-secret"
+              scope: SYSTEM
+              description: "GitHub App webhook secret"
+              secret: "${GITHUB_WEBHOOK_SECRET}"
+unclassified:
+  gitHubPluginConfig:
+    hookSecretConfigs:
+      - credentialsId: "github-webhook-secret"
+        signatureAlgorithm: "SHA256"
+# homelab-infra's checks (its Jenkinsfile), through the GitHub App above. It
+# builds this repository's branches and the pull requests opened from them,
+# never pull requests from forks: the repository is public, and a fork's
+# Jenkinsfile would run in the cluster. Results go back as commit statuses.
+jobs:
+  - script: |
+      multibranchPipelineJob('homelab-infra') {
+        description('Checks for homelab-infra (Jenkinsfile). Defined in Git: apps/production/jenkins/jcasc.yaml.')
+        branchSources {
+          branchSource {
+            source {
+              github {
+                id('homelab-infra')
+                apiUri('https://api.github.com')
+                credentialsId('github-app')
+                repoOwner('barissekerciler')
+                repository('homelab-infra')
+                repositoryUrl('https://github.com/barissekerciler/homelab-infra.git')
+                configuredByUrl(false)
+                traits {
+                  // Branches that are also pull requests build only as the pull request.
+                  gitHubBranchDiscovery {
+                    strategyId(1)
+                  }
+                  // Pull requests from this repository, merged with their target.
+                  gitHubPullRequestDiscovery {
+                    strategyId(1)
+                  }
+                }
+              }
+            }
+          }
+        }
+        orphanedItemStrategy {
+          discardOldItems {
+            numToKeep(20)
+          }
+        }
+        // Webhooks start the builds; the daily scan catches a missed one.
+        triggers {
+          periodicFolderTrigger {
+            interval('1d')
+          }
+        }
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }
+appearance:
+  themeManager:
+    disableUserThemes: false
+    theme: "dark"

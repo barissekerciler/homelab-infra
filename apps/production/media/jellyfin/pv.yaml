@@ -1,0 +1,77 @@
+# Volumes provisioned by the cluster, written down so a rebuilt
+# cluster binds each one to the same claim.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-1eb57a50-6d9f-410e-8076-fed4afe814c4
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-1eb57a50-6d9f-410e-8076-fed4afe814c4-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1791899011228-3547-org.democratic-csi.iscsi
+    volumeHandle: pvc-1eb57a50-6d9f-410e-8076-fed4afe814c4
+  claimRef:
+    namespace: media
+    name: jellyfin-cache
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-df85691c-af58-4bb7-9882-2fa5a9adfbb2
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-df85691c-af58-4bb7-9882-2fa5a9adfbb2-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1791899011228-3547-org.democratic-csi.iscsi
+    volumeHandle: pvc-df85691c-af58-4bb7-9882-2fa5a9adfbb2
+  claimRef:
+    namespace: media
+    name: jellyfin-config

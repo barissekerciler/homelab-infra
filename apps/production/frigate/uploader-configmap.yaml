@@ -1,0 +1,84 @@
+# The uploader sidecar: its loop, the rclone filter and the Storage Box host
+# keys. Both rclone remotes come from the environment (deployment.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frigate-uploader
+data:
+  upload.sh: |
+    #!/bin/sh
+    # Copies new Frigate recordings and snapshots to crypt: (the Storage Box
+    # under /frigate/data, contents and names encrypted). Every 5 s it sends
+    # the files changed in the last 15 min. At start, after a failed 15-min
+    # run and then every hour it reconciles the last 72 h, so uploads catch
+    # up after an outage.
+    # After every good run it writes the epoch to hetzner:status/heartbeat
+    # (Home Assistant reads it) and touches /state/heartbeat (the liveness
+    # probe reads it). While /state/pause exists, runs are skipped.
+    # After a failed run it waits 10, 20, 40, 80, then 120 s: Hetzner bans
+    # an IP after repeated failed logins, and a refused key fails every run.
+    # No set -e: one failed run must not end the loop.
+    set -u
+
+    # Pod shutdown: stop after the current command instead of waiting for SIGKILL.
+    trap 'exit 0' TERM INT
+
+    last_reconcile=0
+    failures=0
+    while true; do
+      # A paused run is neither a success nor a failure.
+      if [ -e /state/pause ]; then
+        sleep 5
+        continue
+      fi
+      now=$(date +%s)
+      # A failed reconcile is retried on the next run.
+      if [ $((now - last_reconcile)) -ge 3600 ]; then
+        rclone copy /media/frigate crypt: --filter-from /etc/uploader/filter.txt --max-age 72h
+        status=$?
+        if [ "$status" -eq 0 ]; then
+          last_reconcile=$now
+        fi
+      else
+        # --no-traverse looks up each new file instead of listing the remote.
+        rclone copy /media/frigate crypt: --filter-from /etc/uploader/filter.txt --max-age 15m --no-traverse
+        status=$?
+        # Files from the start of an outage longer than 15 min would wait for
+        # the hourly reconcile; the next run reconciles the last 72 h instead.
+        if [ "$status" -ne 0 ]; then
+          last_reconcile=0
+        fi
+      fi
+      if [ "$status" -eq 0 ] && date +%s | rclone rcat hetzner:status/heartbeat; then
+        touch /state/heartbeat
+        failures=0
+        sleep 5
+      else
+        failures=$((failures + 1))
+        # min(5 * 2^failures, 120) s; the cap also keeps the shift small.
+        if [ "$failures" -ge 5 ]; then
+          delay=120
+        else
+          delay=$((5 * (1 << failures)))
+        fi
+        echo "upload.sh: run failed ($failures in a row), next try in $delay s" >&2
+        # In the background, so the TERM trap need not wait up to 120 s.
+        sleep "$delay" &
+        wait $!
+      fi
+    done
+  # Paths are relative to /media/frigate. Snapshots are the files directly in
+  # clips/; previews, review thumbnails and the other subfolders stay local.
+  # The two excludes keep rclone from even listing the busiest subfolders.
+  filter.txt: |
+    - /clips/previews/**
+    - /clips/review/**
+    + /clips/*
+    + /recordings/**
+    - *
+  # Hetzner's Storage Box host keys, the same on every box (checked against
+  # the fingerprints Hetzner publishes), so no box name is pinned here.
+  known_hosts: |
+    [*.your-storagebox.de]:23 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIICf9svRenC/PLKIL9nk6K/pxQgoiFC41wTNvoIncOxs
+    [*.your-storagebox.de]:23 ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAGK0po6usux4Qv2d8zKZN1dDvbWjxKkGsx7XwFdSUCnF19Q8psHEUWR7C/LtSQ5crU/g+tQVRBtSgoUcE8T+FWp5wBxKvWG2X9gD+s9/4zRmDeSJR77W6gSA/+hpOZoSE+4KgNdnbYSNtbZH/dN74EG7GLb/gcIpbUUzPNXpfKl7mQitw==
+    [*.your-storagebox.de]:23 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA5EB5p/5Hp3hGW1oHok+PIOH9Pbn7cnUiGmUEBrCVjnAw+HrKyN8bYVV0dIGllswYXwkG/+bgiBlE6IVIBAq+JwVWu1Sss3KarHY3OvFJUXZoZyRRg/Gc/+LRCE7lyKpwWQ70dbelGRyyJFH36eNv6ySXoUYtGkwlU5IVaHPApOxe4LHPZa/qhSRbPo2hwoh0orCtgejRebNtW5nlx00DNFgsvn8Svz2cIYLxsPVzKgUxs8Zxsxgn+Q/UvR7uq4AbAhyBMLxv7DjJ1pc7PJocuTno2Rw9uMZi1gkjbnmiOh6TTXIEWbnroyIhwc8555uto9melEUmWNQ+C+PwAK+MPw==

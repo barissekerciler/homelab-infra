@@ -1,0 +1,346 @@
+http:
+  pprof:
+    port: 6060
+    enabled: false
+  address: 10.0.0.150:55080
+  session_ttl: 720h
+users:
+  - name: admin
+    # bcrypt hash from OpenBao, filled in by the ExternalSecret adguardhome-config.
+    password: "{{ .admin_password_hash }}"
+auth_attempts: 5
+block_auth_min: 15
+http_proxy: ""
+language: en
+theme: auto
+dns:
+  # Talos runs its own DNS cache on 127.0.0.53:53 on every node, so AdGuard
+  # (hostNetwork on homelab) binds only to homelab's LAN and Tailscale
+  # addresses instead of 0.0.0.0.
+  bind_hosts:
+    - 10.0.0.150
+    - "{{ .tailscale_homelab }}"
+  port: 53
+  anonymize_client_ip: false
+  ratelimit: 20
+  ratelimit_subnet_len_ipv4: 24
+  ratelimit_subnet_len_ipv6: 56
+  ratelimit_whitelist: []
+  refuse_any: true
+  upstream_dns:
+    - tls://one.one.one.one
+    - tls://dns.quad9.net
+    - tls://unfiltered.adguard-dns.com
+    - tls://dns.google
+  upstream_dns_file: ""
+  bootstrap_dns:
+    - 9.9.9.10
+    - 149.112.112.10
+    - 2620:fe::10
+    - 2620:fe::fe:10
+  fallback_dns: []
+  upstream_mode: parallel
+  fastest_timeout: 1s
+  allowed_clients: []
+  disallowed_clients: []
+  blocked_hosts:
+    - version.bind
+    - id.server
+    - hostname.bind
+  trusted_proxies:
+    - 127.0.0.0/8
+    - ::1/128
+  cache_size: 4194304
+  cache_ttl_min: 0
+  cache_ttl_max: 0
+  cache_optimistic: false
+  bogus_nxdomain: []
+  aaaa_disabled: false
+  enable_dnssec: false
+  edns_client_subnet:
+    custom_ip: ""
+    enabled: false
+    use_custom: false
+  max_goroutines: 300
+  handle_ddr: true
+  ipset: []
+  ipset_file: ""
+  bootstrap_prefer_ipv6: false
+  upstream_timeout: 10s
+  private_networks: []
+  use_private_ptr_resolvers: true
+  local_ptr_upstreams: []
+  use_dns64: false
+  dns64_prefixes: []
+  serve_http3: false
+  use_http3_upstreams: false
+  serve_plain_dns: true
+  hostsfile_enabled: true
+tls:
+  enabled: false
+  server_name: ""
+  force_https: false
+  port_https: 443
+  port_dns_over_tls: 853
+  port_dns_over_quic: 853
+  port_dnscrypt: 0
+  dnscrypt_config_file: ""
+  allow_unencrypted_doh: false
+  certificate_chain: ""
+  private_key: ""
+  certificate_path: ""
+  private_key_path: ""
+  strict_sni_check: false
+querylog:
+  dir_path: ""
+  ignored: []
+  interval: 720h
+  size_memory: 1000
+  enabled: true
+  file_enabled: true
+statistics:
+  dir_path: ""
+  ignored: []
+  interval: 720h
+  enabled: true
+filters:
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
+    name: AdGuard DNS filter
+    id: 1
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_2.txt
+    name: AdAway Default Blocklist
+    id: 2
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_45.txt
+    name: HaGeZi's Allowlist Referral
+    id: 1729534641
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_40.txt
+    name: "TUR: Turkish Ad Hosts"
+    id: 1729534644
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_26.txt
+    name: "TUR: turk-adlist"
+    id: 1729534645
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_60.txt
+    name: HaGeZi's Xiaomi Tracker Blocklist
+    id: 1729534646
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_30.txt
+    name: Phishing URL Blocklist (PhishTank and OpenPhish)
+    id: 1729534647
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_18.txt
+    name: Phishing Army
+    id: 1729534651
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_48.txt
+    name: HaGeZi's Pro Blocklist
+    id: 1729534654
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_23.txt
+    name: WindowsSpyBlocker - Hosts spy rules
+    id: 1729701931
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_7.txt
+    name: Perflyst and Dandelion Sprout's Smart-TV Blocklist
+    id: 1729701932
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_27.txt
+    name: OISD Blocklist Big
+    id: 1743898606
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_50.txt
+    name: uBlock filters Badware risks
+    id: 1743898607
+whitelist_filters: []
+user_rules:
+  # Tailscale addresses come from OpenBao (the ExternalSecret
+  # adguardhome-config): tailscale_pi, tailscale_homelab, tailscale_homelab2.
+
+  # The rewrites below answer A only, and no home.bariss.dev name has a public
+  # AAAA record, so AAAA went upstream and came back NXDOMAIN. musl (Home
+  # Assistant's image) then drops the A answer too. An empty NOERROR keeps it.
+  - "||home.bariss.dev^$dnstype=AAAA,dnsrewrite=NOERROR;;"
+
+  - "!- local config"
+  - "speedport.ip^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.1"
+
+  # Cluster ingresses: Traefik answers every home.bariss.dev name on both
+  # nodes, so one wildcard per client group covers them all and no host
+  # name is listed here. A name without a route gets Traefik's 404. The
+  # Pi's names (Caddy) are left out with denyallow and answered below;
+  # matching dnsrewrite rules would otherwise add up to three addresses.
+  - "!- cluster ingresses"
+  - "||home.bariss.dev^$client='local',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;10.0.0.150"
+  - "||home.bariss.dev^$client='local',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;10.0.0.151"
+  - "||home.bariss.dev^$client='tailscale',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;{{ .tailscale_homelab }}"
+  - "||home.bariss.dev^$client='tailscale',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;{{ .tailscale_homelab2 }}"
+
+  - "!- Raspberry Pi (Caddy on 10.0.0.87)"
+  - "||dns2.home.bariss.dev^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.87"
+  - "||nas.home.bariss.dev^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.87"
+  - "||router.home.bariss.dev^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.87"
+  - "||raspi.home.bariss.dev^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.87"
+  - "||ha.home.bariss.dev^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.87"
+  - "||vault.home.bariss.dev^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.87"
+  - "||cudy.home.bariss.dev^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.87"
+  - "||dns2.home.bariss.dev^$client='tailscale',dnstype=A,dnsrewrite=NOERROR;A;{{ .tailscale_pi }}"
+  - "||nas.home.bariss.dev^$client='tailscale',dnstype=A,dnsrewrite=NOERROR;A;{{ .tailscale_pi }}"
+  - "||router.home.bariss.dev^$client='tailscale',dnstype=A,dnsrewrite=NOERROR;A;{{ .tailscale_pi }}"
+  - "||raspi.home.bariss.dev^$client='tailscale',dnstype=A,dnsrewrite=NOERROR;A;{{ .tailscale_pi }}"
+  - "||ha.home.bariss.dev^$client='tailscale',dnstype=A,dnsrewrite=NOERROR;A;{{ .tailscale_pi }}"
+  - "||vault.home.bariss.dev^$client='tailscale',dnstype=A,dnsrewrite=NOERROR;A;{{ .tailscale_pi }}"
+  - "||cudy.home.bariss.dev^$client='tailscale',dnstype=A,dnsrewrite=NOERROR;A;{{ .tailscale_pi }}"
+
+  - "!- general config"
+  - "@@||bariss.dev^$important"
+
+  - "!- LG TV config"
+  # Blocks the TV's built-in Alexa and Amazon telemetry for the TV only.
+  # amazonaws.com and cloudfront.net stay open: LG's own services use them.
+  - "||avsxappcaptiveportal.com^$client=10.0.0.209,important"
+  - "||amazon.com^$client=10.0.0.209,important"
+  - "||amazon.de^$client=10.0.0.209,important"
+  - "||amazon.dev^$client=10.0.0.209,important"
+  - "||a2z.com^$client=10.0.0.209,important"
+  - "||amazonvideo.com^$client=10.0.0.209,important"
+  - "||media-amazon.com^$client=10.0.0.209,important"
+
+dhcp:
+  enabled: false
+  interface_name: ""
+  local_domain_name: lan
+  dhcpv4:
+    gateway_ip: ""
+    subnet_mask: ""
+    range_start: ""
+    range_end: ""
+    lease_duration: 86400
+    icmp_timeout_msec: 1000
+    options: []
+  dhcpv6:
+    range_start: ""
+    lease_duration: 86400
+    ra_slaac_only: false
+    ra_allow_slaac: false
+filtering:
+  blocking_ipv4: ""
+  blocking_ipv6: ""
+  blocked_services:
+    schedule:
+      time_zone: UTC
+    ids:
+      - roblox
+  protection_disabled_until: null
+  safe_search:
+    enabled: false
+    bing: true
+    duckduckgo: true
+    ecosia: true
+    google: true
+    pixabay: true
+    yandex: true
+    youtube: true
+  blocking_mode: default
+  parental_block_host: family-block.dns.adguard.com
+  safebrowsing_block_host: standard-block.dns.adguard.com
+  rewrites: []
+  safe_fs_patterns:
+    - /opt/adguardhome/work/userfilters/*
+  safebrowsing_cache_size: 1048576
+  safesearch_cache_size: 1048576
+  parental_cache_size: 1048576
+  cache_time: 30
+  filters_update_interval: 24
+  blocked_response_ttl: 10
+  filtering_enabled: true
+  parental_enabled: false
+  safebrowsing_enabled: false
+  protection_enabled: true
+clients:
+  runtime_sources:
+    whois: true
+    arp: true
+    rdns: true
+    dhcp: true
+    hosts: true
+  persistent:
+    - safe_search:
+        enabled: false
+        bing: true
+        duckduckgo: true
+        ecosia: true
+        google: true
+        pixabay: true
+        yandex: true
+        youtube: true
+      blocked_services:
+        schedule:
+          time_zone: UTC
+        ids: []
+      name: local
+      ids:
+        - 10.0.0.1/16
+        # The Pi on the LAN asks its own AdGuard through Tailscale split DNS,
+        # from its Tailscale address. It cannot reach the nodes' Tailscale
+        # addresses, so it needs the LAN answers. An exact address beats the
+        # tailscale client's 100.0.0.1/8.
+        - "{{ .tailscale_pi }}"
+      tags: []
+      upstreams: []
+      uid: 01949e08-6f8c-73b7-8a7b-b958e34706c9
+      upstreams_cache_size: 0
+      upstreams_cache_enabled: false
+      use_global_settings: true
+      filtering_enabled: true
+      parental_enabled: true
+      safebrowsing_enabled: true
+      use_global_blocked_services: true
+      ignore_querylog: false
+      ignore_statistics: false
+    - safe_search:
+        enabled: false
+        bing: true
+        duckduckgo: true
+        ecosia: true
+        google: true
+        pixabay: true
+        yandex: true
+        youtube: true
+      blocked_services:
+        schedule:
+          time_zone: UTC
+        ids: []
+      name: tailscale
+      ids:
+        - 100.0.0.1/8
+      tags: []
+      upstreams: []
+      uid: 01949e1e-1775-7752-a796-064275c9ab0e
+      upstreams_cache_size: 0
+      upstreams_cache_enabled: false
+      use_global_settings: true
+      filtering_enabled: false
+      parental_enabled: false
+      safebrowsing_enabled: false
+      use_global_blocked_services: true
+      ignore_querylog: false
+      ignore_statistics: false
+log:
+  enabled: true
+  file: ""
+  max_backups: 0
+  max_size: 100
+  max_age: 3
+  compress: false
+  local_time: false
+  verbose: false
+os:
+  group: ""
+  user: ""
+  rlimit_nofile: 0
+schema_version: 29

@@ -1,0 +1,10 @@
+# The Grafana chart moved here from grafana.github.io/helm-charts, which is deprecated.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: grafana-community
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/grafana-community/helm-charts
+  type: oci

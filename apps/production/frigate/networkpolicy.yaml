@@ -1,0 +1,50 @@
+# Frigate trusts the proxy headers and defaults to admin, so only Traefik
+# may connect to 8971. Home Assistant on the Pi may play the go2rtc restream
+# on 8554, which asks for a password. Port 5000 and the go2rtc API (1984)
+# and WebRTC (8555) ports stay inside the pod.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frigate
+spec:
+  podSelector:
+    matchLabels:
+      app: frigate
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8971
+    # The host port keeps the client address.
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.87/32
+      ports:
+        - protocol: TCP
+          port: 8554
+---
+# The mirror's WebDAV server writes to the NAS without a login, so only the
+# Frigate pod (its nas-push sidecar) may connect.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frigate-nas-mirror
+spec:
+  podSelector:
+    matchLabels:
+      app: frigate-nas-mirror
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frigate
+      ports:
+        - protocol: TCP
+          port: 8080

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    configmap.reloader.stakater.com/reload: cloudflared
+    secret.reloader.stakater.com/reload: tunnel-credentials
+  name: cloudflared
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ping_group_range
+            value: 65532 65532
+      containers:
+        - command:
+            - cloudflared
+            - tunnel
+            - --config
+            - /etc/cloudflared/config/config.yaml
+            - run
+          image: cloudflare/cloudflared:2026.10.3
+          env:
+            - name: CLOUDFLARED_LOGLEVEL
+              # debug logs every request's headers (cookies, Authorization)
+              # of all public traffic, readable by anyone with view rights.
+              value: info
+          livenessProbe:
+            failureThreshold: 1
+            httpGet:
+              path: /ready
+              port: 2000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          name: cloudflared
+          resources:
+            limits:
+              cpu: 50m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          volumeMounts:
+            - mountPath: /etc/cloudflared/config
+              name: config
+              readOnly: true
+            - mountPath: /etc/cloudflared/creds
+              name: creds
+              readOnly: true
+      volumes:
+        - configMap:
+            items:
+              - key: config.yaml
+                path: config.yaml
+            name: cloudflared
+          name: config
+        - secret:
+            secretName: tunnel-credentials
+          name: creds

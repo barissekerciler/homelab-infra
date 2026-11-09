@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unpackerr
+  labels:
+    app: unpackerr
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unpackerr
+  template:
+    metadata:
+      labels:
+        app: unpackerr
+    spec:
+      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - homelab
+      securityContext:
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+      containers:
+        - name: unpackerr
+          image: golift/unpackerr:0.16.1@sha256:244fc45cb207308f60e8f52dd703c2b3463385752de0f9517c58ff9d331ed15e
+          env:
+            - name: TZ
+              value: Etc/UTC
+            - name: UN_DEBUG
+              value: "false"
+            - name: UN_INTERVAL
+              value: 30s
+            - name: UN_START_DELAY
+              value: 30s
+            - name: UN_RETRY_DELAY
+              value: 10m
+            - name: UN_MAX_RETRIES
+              value: "3"
+            - name: UN_PARALLEL
+              value: "1"
+            - name: UN_FILE_MODE
+              value: "0664"
+            - name: UN_DIR_MODE
+              value: "0775"
+            - name: UN_LOG_QUEUES
+              value: 5m
+            - name: UN_SONARR_0_URL
+              value: http://sonarr.media.svc.cluster.local:8989
+            - name: UN_SONARR_0_PATHS_0
+              value: /downloads
+            - name: UN_SONARR_0_PROTOCOLS
+              value: torrent,TorrentDownloadProtocol
+            - name: UN_SONARR_0_TIMEOUT
+              value: 2m
+            - name: UN_SONARR_0_DELETE_DELAY
+              value: 10m
+            - name: UN_SONARR_0_DELETE_ORIG
+              value: "false"
+            - name: UN_RADARR_0_URL
+              value: http://radarr.media.svc.cluster.local:7878
+            - name: UN_RADARR_0_PATHS_0
+              value: /downloads
+            - name: UN_RADARR_0_PROTOCOLS
+              value: torrent,TorrentDownloadProtocol
+            - name: UN_RADARR_0_TIMEOUT
+              value: 2m
+            - name: UN_RADARR_0_DELETE_DELAY
+              value: 10m
+            - name: UN_RADARR_0_DELETE_ORIG
+              value: "false"
+          envFrom:
+            - secretRef:
+                name: unpackerr-secret
+          volumeMounts:
+            - name: downloads
+              mountPath: /downloads
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: "1"
+              memory: 4Gi
+      volumes:
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: rdt-downloads-pvc

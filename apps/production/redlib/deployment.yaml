@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redlib
+  labels:
+    app: redlib
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redlib
+  template:
+    metadata:
+      labels:
+        app: redlib
+    spec:
+      containers:
+        - name: redlib
+          image: ghcr.io/nachtalb/redlib:latest@sha256:aa16bc4d091892b0cc04dbff0622c987364d712b07c68644a409f78bef583308 # {"$imagepolicy": "flux-system:redlib"}
+          env:
+            - name: REDLIB_SFW_ONLY
+              value: "off"
+            - name: REDLIB_DEFAULT_SHOW_NSFW
+              value: "on"
+            - name: REDLIB_DEFAULT_BLUR_NSFW
+              value: "off"
+            - name: REDLIB_DEFAULT_USE_HLS
+              value: "on"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 5m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

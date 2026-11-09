@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: stalwart
+spec:
+  type: ClusterIP
+  selector:
+    app: stalwart
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: smtp
+      protocol: TCP
+    - name: submissions
+      port: 465
+      targetPort: submissions
+      protocol: TCP
+    - name: imaps
+      port: 993
+      targetPort: imaps
+      protocol: TCP
+    - name: sieve
+      port: 4190
+      targetPort: sieve
+      protocol: TCP
+    - name: management
+      port: 8080
+      targetPort: management
+      protocol: TCP

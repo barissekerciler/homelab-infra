@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rdt-lifetime-cleanup
+  labels:
+    app: rdt
+    component: lifetime-cleanup
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 120
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 600
+      template:
+        metadata:
+          labels:
+            app: rdt
+            component: lifetime-cleanup
+        spec:
+          restartPolicy: Never
+          # rdt's RWO config volume is attached where rdt runs.
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      homelab.bariss.dev/volume-group: sonarr-rdt
+                  topologyKey: kubernetes.io/hostname
+          containers:
+            - name: cleanup
+              image: python:3.15-alpine
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - /bootstrap/normalize-rdt.py
+              volumeMounts:
+                - name: config
+                  mountPath: /data/db
+                - name: config-normalizer
+                  mountPath: /bootstrap
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                limits:
+                  cpu: 200m
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                claimName: rdt-config-pvc-iscsi
+            - name: config-normalizer
+              configMap:
+                name: rdt-config-normalizer
+                defaultMode: 0555

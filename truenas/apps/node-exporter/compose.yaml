@@ -1,0 +1,38 @@
+# Prometheus node-exporter on the NAS for the cluster's Prometheus
+# (infrastructure/monitoring/scrape/truenas.yaml): CPU, memory, temperatures
+# (coretemp, drivetemp for the SATA disks, NVMe), disk I/O, network, ZFS pool
+# state and the pools' free space. TrueNAS Apps owns the workload; see README.md.
+services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.12.1
+    command:
+      - --path.rootfs=/host
+      # LAN only; the Tailscale address stays closed.
+      - --web.listen-address=10.0.0.203:9100
+      # Datasets share their pool's free space: keep / and the pool roots only.
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+|mnt/\.ix-apps|mnt/[^/]+/.+)($|/)
+      # Leave out partitions and the zvols behind the cluster's iSCSI volumes.
+      - --collector.diskstats.device-exclude=^((z?ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+|zd\d+)$
+      # udev data gives node_disk_info its model, serial and SATA port (path):
+      # the dashboard names disks by port, since sdX letters move between boots.
+      - --path.udev.data=/host/run/udev/data
+    network_mode: host
+    pid: host
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /
+        target: /host
+        read_only: true
+        bind:
+          propagation: rslave
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M

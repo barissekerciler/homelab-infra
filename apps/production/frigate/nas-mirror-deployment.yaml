@@ -1,0 +1,94 @@
+# Writes Frigate's recordings and snapshots to the NAS (nas-mirror-configmap.yaml),
+# so they outlive the Frigate pod's emptyDir. A pod of its own, not a container
+# of the Frigate pod: with the NAS down only this pod waits for its mount, and
+# Frigate keeps starting, recording and uploading to the Storage Box. The
+# Frigate pod's nas-push sidecar sends the files here over WebDAV.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frigate-nas-mirror
+  labels:
+    app: frigate-nas-mirror
+  annotations:
+    # The script is read only at start.
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: frigate-nas-mirror
+  template:
+    metadata:
+      # Not app: frigate: the Service and the NetworkPolicy select that.
+      labels:
+        app: frigate-nas-mirror
+    spec:
+      # Scheduled ahead of other homelab workloads (priorityclass.yaml).
+      priorityClassName: frigate-camera
+      # Not pinned: the NFS export admits both nodes.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - homelab
+      containers:
+        - name: mirror
+          image: rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5
+          command:
+            - sh
+            - /etc/nas-mirror/nas-mirror.sh
+          env:
+            # A local share: no remotes, and the config stays in memory.
+            - name: RCLONE_CONFIG
+              value: /dev/null
+          ports:
+            - name: webdav
+              containerPort: 8080
+              protocol: TCP
+          # TrueNAS's apps user (568), as for Immich and Jellyfin: the NFS
+          # server squashes root, so only the dataset's owner can write.
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 568
+            runAsGroup: 568
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          # Lists the share's root, so a hung NAS mount fails it too.
+          livenessProbe:
+            httpGet:
+              path: /
+              port: webdav
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 5
+          # homelab has 3990m of 4000m requested; this is light file I/O.
+          resources:
+            requests:
+              cpu: 75m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: nas
+              mountPath: /nas
+            - name: nas-mirror
+              mountPath: /etc/nas-mirror
+              readOnly: true
+      volumes:
+        - name: nas
+          persistentVolumeClaim:
+            claimName: frigate-nas
+        - name: nas-mirror
+          configMap:
+            name: frigate-nas-mirror

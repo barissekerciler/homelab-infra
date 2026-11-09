@@ -1,0 +1,29 @@
+# Fork of Redlib; its latest tag is followed by digest (policies/redlib.yaml).
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: redlib
+  namespace: flux-system
+spec:
+  image: ghcr.io/nachtalb/redlib
+  interval: 1h
+---
+# Talos and Kubernetes releases for tuppr (infrastructure/tuppr/upgrades).
+# Public images; scanned twice a day.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: talos
+  namespace: flux-system
+spec:
+  image: ghcr.io/siderolabs/talos
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: kubelet
+  namespace: flux-system
+spec:
+  image: ghcr.io/siderolabs/kubelet
+  interval: 12h

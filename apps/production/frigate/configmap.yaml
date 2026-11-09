@@ -1,0 +1,178 @@
+# Frigate 0.18 config. The init container copies it to /config at every
+# start, so Git wins over changes saved in the Frigate UI.
+# Keys: https://docs.frigate.video/configuration/advanced/reference
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frigate-config
+data:
+  config.yml: |
+    # Matches the image, so Frigate does not migrate and rewrite this file.
+    version: 0.18-0
+
+    mqtt:
+      host: 10.0.0.87
+      port: 1883
+      user: frigate
+      password: "{FRIGATE_MQTT_PASSWORD}"
+
+    # Traefik terminates TLS and oauth2-proxy (GitHub) signs users in.
+    tls:
+      enabled: false
+    auth:
+      enabled: false
+    proxy:
+      header_map:
+        user: x-auth-request-user
+      default_role: admin
+
+    detectors:
+      ov:
+        type: openvino
+        device: GPU
+    # YOLOv9-c at 320x320: Frigate recommends YOLOv9 and the largest variant
+    # the hardware keeps up with (66 ms per inference on the iGPU). The bundled
+    # SSDLite took a jacket on a chair for a person at 90%, and YOLOv9-s could
+    # not tell people from pillows in the grayscale IR picture. export-model.sh
+    # builds the file at start; without it, model-fallback.yml replaces this block.
+    model:
+      model_type: yolo-generic
+      width: 320
+      height: 320
+      input_tensor: nchw
+      input_dtype: float
+      path: /config/model_cache/yolov9-c-320.onnx
+      labelmap_path: /labelmap/coco-80.txt
+
+    ffmpeg:
+      hwaccel_args: preset-vaapi
+      output_args:
+        # The camera sends AAC; copy it into the recordings without transcoding.
+        record: preset-record-generic-audio-copy
+
+    # SP1 (behind the Cudy port forward) has one stream: h264 1920x1080 at
+    # 15 fps with AAC audio. go2rtc keeps the only connection to the camera.
+    go2rtc:
+      # Home Assistant on the Pi plays the restream (restream-service.yaml).
+      # go2rtc asks every client but loopback for these, so Frigate's own
+      # 127.0.0.1 input needs none.
+      rtsp:
+        username: "{FRIGATE_RESTREAM_USER}"
+        password: "{FRIGATE_RESTREAM_PASSWORD}"
+      streams:
+        living_room:
+          - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.0.0.224:8554/live0
+
+    objects:
+      track:
+        - person
+      # Frigate's defaults. In grayscale, YOLOv9-c scores people 0.83-0.93
+      # and the jacket 0.58; YOLOv9-s gave people as little as 0.59.
+      filters:
+        person:
+          min_score: 0.5
+          threshold: 0.7
+
+    # Keep segments with motion, never 24/7 footage.
+    record:
+      enabled: true
+      continuous:
+        days: 0
+      motion:
+        days: 30
+      alerts:
+        pre_capture: 5
+        post_capture: 5
+        retain:
+          days: 30
+          mode: motion
+      detections:
+        pre_capture: 5
+        post_capture: 5
+        retain:
+          days: 30
+          mode: motion
+
+    snapshots:
+      enabled: true
+      retain:
+        default: 30
+
+    # No web push: Home Assistant sends the notifications, with the person
+    # snapshot from MQTT (raspi/apps/home-assistant/config/packages/camera.yaml).
+    notifications:
+      enabled: false
+
+    # Sounds worth a notification while nobody is home (Home Assistant sends them):
+    # the dog, smoke and fire alarms, people, breaking glass. YAMNet runs on the CPU;
+    # one thread is enough for one camera on the busy homelab node.
+    audio:
+      enabled: true
+      num_threads: 1
+      listen:
+        - bark
+        - howl
+        - whimper_dog
+        - fire_alarm
+        - smoke_detector
+        - scream
+        - yell
+        - speech
+        - shatter
+
+    cameras:
+      living_room:
+        friendly_name: Living room
+        ffmpeg:
+          inputs:
+            - path: rtsp://127.0.0.1:8554/living_room
+              input_args: preset-rtsp-restream
+              roles:
+                - detect
+                - record
+                - audio
+        # No substream, so detection scales the main stream down. Arm turns
+        # detection on over MQTT; 0.18 keeps runtime toggles across restarts.
+        detect:
+          enabled: true
+          width: 1280
+          height: 720
+          fps: 5
+
+  # The bundled SSDLite model. The init container swaps it in for the model
+  # block above when the YOLOv9 download fails, so detection still runs.
+  model-fallback.yml: |
+    model:
+      width: 300
+      height: 300
+      input_tensor: nhwc
+      input_pixel_format: bgr
+      path: /openvino-model/ssdlite_mobilenet_v2.xml
+      labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+  # Frigate 0.18's YOLOv9 export (docs: Object detectors > OpenVINO > YOLOv9)
+  # without Docker: official weights and code at a fixed commit, CPU torch.
+  # Never fails the pod; copy-config falls back to SSDLite without the file.
+  export-model.sh: |
+    m=/config/model_cache/yolov9-c-320.onnx
+    [ -s "$m" ] && exit 0
+    mkdir -p /config/model_cache
+    src=yolov9-5b1ea9a8b3f0ffe4fe0e203ec6232d788bb3fcff
+    cd /tmp &&
+      python3 -c 'import sys, tarfile, urllib.request as u
+    u.urlretrieve("https://github.com/WongKinYiu/yolov9/archive/" + sys.argv[1][7:] + ".tar.gz", "src.tgz")
+    tarfile.open("src.tgz").extractall(".")
+    u.urlretrieve("https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-c-converted.pt", sys.argv[1] + "/yolov9-c.pt")' "$src" &&
+      cd "$src" &&
+      sed -i 's/^opencv-python/opencv-python-headless/' requirements.txt &&
+      sed -i "s/ckpt = torch.load(attempt_download(w), map_location='cpu')/ckpt = torch.load(attempt_download(w), map_location='cpu', weights_only=False)/" models/experimental.py &&
+      uv venv -q /tmp/v &&
+      . /tmp/v/bin/activate &&
+      uv pip install -q --index-url https://download.pytorch.org/whl/cpu torch==2.5.1 torchvision==0.20.1 &&
+      uv pip install -q -r requirements.txt "setuptools<81" onnx==1.18.0 onnxruntime onnx-simplifier==0.4.* onnxscript &&
+      timeout 600 python3 export.py --weights yolov9-c.pt --imgsz 320 --simplify --include onnx &&
+      cp yolov9-c.onnx "$m.part" &&
+      mv "$m.part" "$m" &&
+      echo "YOLOv9-c exported to $m" ||
+      echo "YOLOv9 export failed; Frigate starts with the bundled SSDLite"
+    exit 0

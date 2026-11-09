@@ -1,0 +1,240 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonarr-stalled-requeue-script
+  labels:
+    app: sonarr
+    component: stalled-requeue
+data:
+  requeue.py: |
+    #!/usr/bin/env python3
+    import datetime as dt
+    import json
+    import os
+    import sqlite3
+    import sys
+    import time
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+    import xml.etree.ElementTree as ET
+
+    SONARR_URL = os.environ.get("SONARR_URL", "http://sonarr.media.svc.cluster.local:8989").rstrip("/")
+    SONARR_CONFIG = os.environ.get("SONARR_CONFIG", "/sonarr-config/config.xml")
+    DB_PATH = os.environ.get("RDT_DB", "/rdt-db/rdtclient.db")
+    STALLED_MINUTES = int(os.environ.get("STALLED_MINUTES", "10"))
+    MAX_PER_RUN = int(os.environ.get("MAX_PER_RUN", "3"))
+    SONARR_RETRIES = int(os.environ.get("SONARR_RETRIES", "3"))
+    SONARR_RETRY_SECONDS = int(os.environ.get("SONARR_RETRY_SECONDS", "10"))
+    DRY_RUN = os.environ.get("DRY_RUN", "false").lower() == "true"
+
+    class SonarrUnavailable(RuntimeError):
+        pass
+
+    def log(message):
+        print(f"{dt.datetime.now(dt.timezone.utc).isoformat()} {message}", flush=True)
+
+    def api_key():
+        root = ET.parse(SONARR_CONFIG).getroot()
+        key = root.findtext("ApiKey")
+        if not key:
+            raise RuntimeError(f"ApiKey not found in {SONARR_CONFIG}")
+        return key
+
+    def parse_rdt_time(value):
+        if not value:
+            return None
+        text = str(value).replace("Z", "+00:00")
+        if "." in text:
+            head, tail = text.split(".", 1)
+            digits = "".join(ch for ch in tail if ch.isdigit())
+            suffix = tail[len(digits):]
+            text = f"{head}.{digits[:6]}{suffix}"
+        try:
+            parsed = dt.datetime.fromisoformat(text)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=dt.timezone.utc)
+            return parsed.astimezone(dt.timezone.utc)
+        except Exception:
+            return None
+
+    def sonarr(method, path, key, body=None):
+        data = None
+        headers = {"X-Api-Key": key}
+        if body is not None:
+            data = json.dumps(body).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(f"{SONARR_URL}{path}", data=data, headers=headers, method=method)
+        for attempt in range(1, SONARR_RETRIES + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    raw = resp.read()
+                    if not raw:
+                        return None
+                    return json.loads(raw.decode("utf-8"))
+            except urllib.error.HTTPError:
+                raise
+            except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                if attempt >= SONARR_RETRIES:
+                    raise SonarrUnavailable(str(exc)) from exc
+                log(f"sonarr-unavailable attempt={attempt}/{SONARR_RETRIES} error={exc}; retrying")
+                time.sleep(SONARR_RETRY_SECONDS)
+
+    def connect_db():
+        try:
+            return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=10)
+        except sqlite3.OperationalError:
+            return sqlite3.connect(f"file:{DB_PATH}?mode=ro&immutable=1", uri=True, timeout=10)
+
+    def stalled_torrents():
+        cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=STALLED_MINUTES)
+        conn = connect_db()
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                """
+                SELECT Hash, RdName, RdStatusRaw, RdProgress, RdSeeders, RdSize, RdSpeed, RdAdded, Added, Error
+                FROM Torrents
+                WHERE Category = 'tv-sonarr'
+                  AND (
+                    (
+                      COALESCE(Completed, '') = ''
+                      AND COALESCE(Error, '') = ''
+                      AND lower(COALESCE(RdStatusRaw, '')) LIKE 'stalled%'
+                    )
+                    OR lower(COALESCE(Error, '')) LIKE '%torrent lifetime%'
+                  )
+                ORDER BY Added ASC
+                """
+            ).fetchall()
+        finally:
+            conn.close()
+
+        stale = []
+        for row in rows:
+            age_source = parse_rdt_time(row["RdAdded"]) or parse_rdt_time(row["Added"])
+            if age_source and age_source > cutoff:
+                log(f"skip-new hash={row['Hash']} name={row['RdName']} state={row['RdStatusRaw']}")
+                continue
+            stale.append(dict(row))
+        return stale
+
+    def queue_text(item):
+        parts = [str(item.get("errorMessage") or "")]
+        for message in item.get("statusMessages") or []:
+            parts.append(str(message.get("title") or ""))
+            for detail in message.get("messages") or []:
+                parts.append(str(detail))
+        return " ".join(parts).lower()
+
+    def stalled_queue_items(records):
+        cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=STALLED_MINUTES)
+        stale = []
+        for item in records:
+            text = queue_text(item)
+            is_stalled = (
+                item.get("status") == "warning"
+                and (
+                    "stalled" in text
+                    or "no connections" in text
+                    or "qbittorrent is reporting an error" in text
+                )
+            )
+            if not is_stalled:
+                continue
+
+            age_source = parse_rdt_time(item.get("added"))
+            if age_source and age_source > cutoff:
+                log(f"skip-new-queue queueId={item.get('id')} title={item.get('title')} error={item.get('errorMessage')}")
+                continue
+            stale.append(item)
+        return stale
+
+    def requeue_item(item, sonarr_key, reason):
+        series = item.get("series") or {}
+        episode = item.get("episode") or {}
+        episode_id = episode.get("id") or item.get("episodeId")
+        queue_id = item.get("id")
+        item_key = item.get("downloadId") or queue_id
+        if not episode_id or not queue_id:
+            log(f"skip-unmapped queueId={queue_id} itemKey={item_key} title={item.get('title')}")
+            return False
+
+        log(
+            f"{reason} "
+            f"queueId={queue_id} series={series.get('title')} "
+            f"episodeId={episode_id} title={item.get('title')}"
+        )
+        if DRY_RUN:
+            return True
+
+        delete_path = f"/api/v3/queue/{queue_id}?" + urllib.parse.urlencode(
+            {"removeFromClient": "true", "blocklist": "true"}
+        )
+        sonarr("DELETE", delete_path, sonarr_key)
+        time.sleep(2)
+        sonarr("POST", "/api/v3/command", sonarr_key, {"name": "EpisodeSearch", "episodeIds": [episode_id]})
+        log(f"requeued episodeId={episode_id} queueId={queue_id} itemKey={item_key}")
+        return True
+
+    def main():
+        key = api_key()
+        try:
+            queue = sonarr("GET", "/api/v3/queue?includeUnknownSeriesItems=true&includeSeries=true&includeEpisode=true&page=1&pageSize=500", key)
+        except SonarrUnavailable as exc:
+            log(f"sonarr-unavailable skip-run error={exc}")
+            return 0
+        records = queue.get("records", []) if isinstance(queue, dict) else []
+
+        stalled = stalled_torrents()
+        queue_by_hash = {str(item.get("downloadId", "")).lower(): item for item in records}
+        queue_stalled = stalled_queue_items(records)
+
+        if not stalled and not queue_stalled:
+            log("no stalled tv-sonarr torrents or queue warnings")
+            return 0
+
+        handled = 0
+        handled_queue_ids = set()
+        for torrent in stalled:
+            if handled >= MAX_PER_RUN:
+                log(f"max-per-run reached ({MAX_PER_RUN})")
+                break
+
+            torrent_hash = str(torrent.get("Hash", "")).lower()
+            item = queue_by_hash.get(torrent_hash)
+            if not item:
+                log(f"skip-not-in-sonarr-queue hash={torrent_hash} name={torrent.get('RdName')}")
+                continue
+
+            try:
+                if requeue_item(item, key, f"rdt-stalled hash={torrent_hash}"):
+                    handled += 1
+                    handled_queue_ids.add(item.get("id"))
+            except urllib.error.HTTPError as exc:
+                body = exc.read().decode("utf-8", "replace")[:500]
+                log(f"sonarr-error status={exc.code} queueId={item.get('id')} body={body}")
+            except Exception as exc:
+                log(f"error queueId={item.get('id')} hash={torrent_hash}: {exc}")
+
+        for item in queue_stalled:
+            if handled >= MAX_PER_RUN:
+                log(f"max-per-run reached ({MAX_PER_RUN})")
+                break
+            if item.get("id") in handled_queue_ids:
+                continue
+
+            try:
+                if requeue_item(item, key, f"queue-stalled error={item.get('errorMessage')}"):
+                    handled += 1
+            except urllib.error.HTTPError as exc:
+                body = exc.read().decode("utf-8", "replace")[:500]
+                log(f"sonarr-error status={exc.code} queueId={item.get('id')} body={body}")
+            except Exception as exc:
+                log(f"error queueId={item.get('id')}: {exc}")
+
+        log(f"handled={handled} stalled_seen={len(stalled)} queue_stalled_seen={len(queue_stalled)}")
+        return 0
+
+    if __name__ == "__main__":
+        sys.exit(main())

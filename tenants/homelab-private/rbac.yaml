@@ -1,0 +1,24 @@
+# kustomize-controller applies the tenant's Kustomizations as this
+# ServiceAccount (spec.serviceAccountName in sync.yaml).
+#
+# The tenant is trusted: it creates its own Namespaces and pinned
+# PersistentVolumes, and its databases live in the shared `postgresql`
+# namespace. Narrower rules would have to name those namespaces here, in the
+# public repository, so it is bound to cluster-admin instead.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: homelab-private
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tenant-homelab-private
+subjects:
+  - kind: ServiceAccount
+    name: homelab-private
+    namespace: homelab-private
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin

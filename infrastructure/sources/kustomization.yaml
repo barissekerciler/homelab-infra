@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Helm chart repositories, one per vendor; every one is used by a HelmRelease.
+resources:
+  - autoscaler.yaml
+  - cilium.yaml
+  - cloudnative-pg.yaml
+  - democratic-csi.yaml
+  - external-secrets.yaml
+  - fairwinds.yaml
+  - flux-operator.yaml
+  - grafana-community.yaml
+  - home-operations.yaml
+  - immich.yaml
+  - jellyfin.yaml
+  - jenkins.yaml
+  - jetstack.yaml
+  - metrics-server.yaml
+  - nextcloud.yaml
+  - oauth2-proxy.yaml
+  - openbao.yaml
+  - prometheus-community.yaml
+  - stakater.yaml
+  - traefik.yaml
+  - vikunja.yaml

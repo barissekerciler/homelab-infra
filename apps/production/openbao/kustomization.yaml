@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: openbao
+resources:
+  - namespace.yaml
+  - volumes.yaml
+  - release.yaml
+  - middleware.yaml
+  - openbao-snapshots-s3-secret.yaml
+  - snapshot-copy.yaml

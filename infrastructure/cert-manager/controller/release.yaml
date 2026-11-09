@@ -1,0 +1,45 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+spec:
+  releaseName: cert-manager
+  chart:
+    spec:
+      chart: cert-manager
+      version: v1.21.3
+      sourceRef:
+        kind: HelmRepository
+        name: jetstack
+        namespace: flux-system
+  interval: 1h0m0s
+  values:
+    installCRDs: true
+    resources:
+      limits:
+        cpu: 50m
+        memory: 64Mi
+      requests:
+        cpu: 10m
+        memory: 32Mi
+    cainjector:
+      resources:
+        requests:
+          cpu: 10m
+        limits:
+          cpu: 250m
+    webhook:
+      resources:
+        requests:
+          cpu: 10m
+        limits:
+          cpu: 250m
+    startupapicheck:
+      resources:
+        requests:
+          cpu: 10m
+        limits:
+          cpu: 100m
+    ingressShim:
+      defaultIssuerKind: ClusterIssuer
+      defaultIssuerName: letsencrypt-staging

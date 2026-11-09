@@ -1,0 +1,96 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jenkins
+  namespace: jenkins
+spec:
+  releaseName: jenkins
+  chart:
+    spec:
+      chart: jenkins
+      version: 5.9.73
+      sourceRef:
+        kind: HelmRepository
+        name: jenkins
+        namespace: flux-system
+  interval: 1h0m0s
+  timeout: 20m0s
+  values:
+    controller:
+      replicas: 1
+      # Existing plugins are only replaced when this is true. After raising
+      # the versions below, set it for one start (the newest dependencies come
+      # along), then back to false so restarts do not download every plugin.
+      overwritePlugins: false
+      installPlugins:
+        - kubernetes:4560.vc25b_83890c34
+        - workflow-aggregator:608.v67378e9d3db_1
+        - git:5.11.0
+        - configuration-as-code:2136.veb_3a_554550b_f
+      additionalPlugins:
+        - github-branch-source:1986.v801e40614d00
+        - timestamper:1.30
+        - ansicolor:542.v03d235fee02d
+        - dark-theme:652.vea_da_dfea_e769
+        # Lets jcasc.yaml define jobs (jobs:), so they live in Git.
+        - job-dsl:3732.v9a_c49a_61a_313
+      admin:
+        existingSecret: jenkins-admin-secret
+        userKey: jenkins-admin-user
+        passwordKey: jenkins-admin-password
+      containerEnv:
+        - name: GITHUB_APP_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-jcasc-secrets
+              key: github-app-private-key
+        - name: GITHUB_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-jcasc-secrets
+              key: github-webhook-secret
+      resources:
+        requests:
+          cpu: 100m
+          memory: "1Gi"
+        limits:
+          cpu: "2"
+          memory: "4Gi"
+      ingress:
+        enabled: true
+        ingressClassName: traefik
+        hostName: jenkins.home.bariss.dev
+        annotations:
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: "true"
+      serviceType: ClusterIP
+      podSecurityContextOverride:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      probes:
+        startupProbe:
+          failureThreshold: 60
+      sidecars:
+        configAutoReload:
+          resources:
+            requests:
+              cpu: 10m
+            limits:
+              cpu: 200m
+    agent:
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "512Mi"
+        limits:
+          cpu: "2"
+          memory: "4Gi"
+    persistence:
+      enabled: true
+      # iSCSI, so the scheduler may place the controller on either node.
+      existingClaim: jenkins-home
+    rbac:
+      create: true
+    serviceAccount:
+      create: true

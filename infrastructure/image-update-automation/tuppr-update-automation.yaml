@@ -1,0 +1,33 @@
+# Writes the talos and kubelet policies' tags into tuppr's TalosUpgrade and
+# KubernetesUpgrade; tuppr then rolls the upgrade out in its maintenance
+# window. Separate from flux-system-apps so its path stays narrow.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: flux-system-tuppr
+  namespace: flux-system
+spec:
+  interval: 1h
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      messageTemplate: |
+        Talos/Kubernetes version update
+
+        {{ range $resource, $changes := .Changed.Objects -}}
+        - {{ $resource.Kind }} {{ $resource.Name }}:
+        {{- range $_, $change := $changes }} {{ $change.OldValue }} -> {{ $change.NewValue }}{{ end }}
+        {{ end -}}
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+    push:
+      branch: main
+  update:
+    path: ./infrastructure/tuppr/upgrades
+    strategy: Setters

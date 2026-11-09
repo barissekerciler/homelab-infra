@@ -1,0 +1,123 @@
+# Cilium is the cluster's CNI: the pod network (VXLAN between the nodes), the
+# NetworkPolicies, and Services, hostPorts and NodePorts in eBPF instead of
+# kube-proxy. Talos deploys no CNI and no kube-proxy
+# (talos/patches/controlplane.yaml). Removing this HelmRelease from Git leaves
+# Cilium running (prune disabled): uninstalling the CNI would cut every pod
+# off.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  releaseName: cilium
+  chart:
+    spec:
+      chart: cilium
+      version: 1.20.4
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+        namespace: flux-system
+  interval: 1h0m0s
+  values:
+    # The values Talos requires (Talos docs, "Deploying Cilium CNI"): pod
+    # ranges from Kubernetes, the API through KubePrism, no module loading and
+    # no cgroup mount of its own.
+    ipam:
+      # Each node's pod range comes from Kubernetes, out of podSubnets in
+      # talos/patches/common.yaml (10.42.0.0/16).
+      mode: kubernetes
+    kubeProxyReplacement: true
+    # Without kube-proxy nothing serves the kubernetes Service when the agent
+    # starts. KubePrism, Talos's API load balancer on every node, does.
+    k8sServiceHost: localhost
+    k8sServicePort: 7445
+    securityContext:
+      capabilities:
+        # The chart's defaults without SYS_MODULE: Talos does not let
+        # workloads load kernel modules.
+        ciliumAgent:
+          - CHOWN
+          - KILL
+          - NET_ADMIN
+          - NET_RAW
+          - IPC_LOCK
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          - DAC_OVERRIDE
+          - FOWNER
+          - SETGID
+          - SETUID
+          - SYSLOG
+        cleanCiliumState:
+          - NET_ADMIN
+          - SYS_ADMIN
+          - SYS_RESOURCE
+    # Talos mounts cgroup v2 and the BPF filesystem itself.
+    cgroup:
+      autoMount:
+        enabled: false
+      hostRoot: /sys/fs/cgroup
+    routingMode: tunnel
+    tunnelProtocol: vxlan
+    # hostPorts and NodePorts answer on these devices' addresses. Traefik's
+    # hostPorts must answer on the LAN NIC (eno1 on homelab, enp0s31f6 on
+    # homelab2) and on the nodes' Tailscale addresses (infrastructure/traefik).
+    devices:
+      - en+
+      - tailscale0
+    # The LAN's MTU, so tailscale0's 1280 cannot lower it; Cilium takes the
+    # tunnel and WireGuard overhead off it for the pods.
+    MTU: 1500
+    # Pod traffic between the nodes crosses the LAN encrypted: OpenBao's
+    # listener and several apps speak plain HTTP inside the cluster.
+    encryption:
+      enabled: true
+      type: wireguard
+    # The health API (4240) and the operator's metrics (9963) would answer
+    # unauthenticated on the nodes' LAN addresses; nothing here uses them.
+    healthChecking: false
+    endpointHealthChecking:
+      enabled: false
+    # Cilium leaves node addresses out of NetworkPolicy ipBlocks by default;
+    # in this mode an ipBlock naming a node address selects that node. Even
+    # so, 0.0.0.0/0 does not select the pod's own node, so the claude-code and
+    # claude-agents egress rules list both nodes for the API server and
+    # host-network pods (AdGuard).
+    policyCIDRMatchMode:
+      - nodes
+    # Only Kubernetes NetworkPolicies (L3/L4) here: no Envoy DaemonSet.
+    l7Proxy: false
+    # Hubble in the agents only: `hubble observe` in a cilium pod shows flows
+    # and policy verdicts (talos/README.md). No relay, no UI.
+    hubble:
+      enabled: true
+      relay:
+        enabled: false
+      ui:
+        enabled: false
+    # A values change restarts the agents and the operator, so it takes effect.
+    rollOutCiliumPods: true
+    # kube-system has no VPA (infrastructure/goldilocks): these are estimates;
+    # check them against usage after a few days. No memory limit on the agent:
+    # an OOM kill would stop new pods from starting on its node.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 192Mi
+      limits:
+        cpu: "1"
+    operator:
+      replicas: 1
+      rollOutPods: true
+      prometheus:
+        enabled: false
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi

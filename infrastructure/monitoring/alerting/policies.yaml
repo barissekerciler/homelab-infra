@@ -1,0 +1,17 @@
+# Grafana's one notification policy tree. Critical alerts ring and repeat
+# every 4 hours while they last; everything else arrives silently, once a day.
+# One message per rule (and per forwarded Prometheus alert) lists all its
+# instances. A tenant must not ship a policies file: it would replace this one.
+apiVersion: 1
+policies:
+  - orgId: 1
+    receiver: telegram-warning
+    group_by: [grafana_folder, alertname, alert]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 24h
+    routes:
+      - receiver: telegram-critical
+        object_matchers:
+          - [severity, "=", critical]
+        repeat_interval: 4h

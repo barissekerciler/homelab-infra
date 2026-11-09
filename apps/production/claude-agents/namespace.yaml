@@ -1,0 +1,15 @@
+# The Claude Code box's sandbox: it may create, change and delete anything
+# here, within the memory rules in limits.yaml. Baseline Pod Security keeps pods off the host
+# (no privileged pods, hostPath, host network or host ports); admission.yaml
+# keeps NFS and iSCSI volumes out, so nothing here reaches the NAS.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: claude-agents
+  annotations:
+    # request = limit by choice (limits.yaml); VPA only recommends here.
+    goldilocks.fairwinds.com/vpa-update-mode: "off"
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest

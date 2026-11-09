@@ -1,0 +1,78 @@
+# The box reads the whole cluster, except Secrets, and never execs into,
+# port-forwards to or proxies anything outside claude-agents. It may do
+# anything inside claude-agents (apps/production/claude-agents). Everything
+# else changes through Git.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: claude-code
+---
+# The built-in view role: namespaced objects, logs, events, metrics and the
+# Flux, cert-manager and Flux Operator kinds aggregated into it. No Secrets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: claude-code-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: claude-code
+    namespace: claude-code
+---
+# Nodes, other cluster-scoped objects and the CRD kinds that view leaves
+# out, read only.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: claude-code-read
+rules:
+  - apiGroups: [""]
+    resources: [nodes, persistentvolumes]
+    verbs: [get, list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses, volumeattachments, csidrivers, csinodes]
+    verbs: [get, list, watch]
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch]
+  - apiGroups: [admissionregistration.k8s.io]
+    resources: [validatingadmissionpolicies, validatingadmissionpolicybindings]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingressclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [scheduling.k8s.io]
+    resources: [priorityclasses]
+    verbs: [get, list, watch]
+  # The platform's own kinds: Traefik, Cilium, tuppr (Talos and Kubernetes
+  # upgrades), Talos ServiceAccounts, CloudNativePG and its Barman Cloud
+  # plugin, Prometheus Operator and VPA.
+  - apiGroups:
+      - traefik.io
+      - hub.traefik.io
+      - gateway.networking.k8s.io
+      - cilium.io
+      - tuppr.home-operations.com
+      - talos.dev
+      - postgresql.cnpg.io
+      - barmancloud.cnpg.io
+      - monitoring.coreos.com
+      - autoscaling.k8s.io
+    resources: ["*"]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: claude-code-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: claude-code-read
+subjects:
+  - kind: ServiceAccount
+    name: claude-code
+    namespace: claude-code

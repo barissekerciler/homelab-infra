@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rdt-downloads-pv
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    app: rdt
+spec:
+  capacity:
+    storage: 500Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-nfs-csi
+  nfs:
+    server: 10.0.0.203
+    path: /mnt/pool1/apps/media/rdt/downloads
+  mountOptions:
+    - noatime
+    - nodev
+    - noexec
+    - nosuid
+    - nfsvers=4.1
+    - nconnect=4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-2c2b7dc6-d1b2-4fc1-9cdc-ebf754385e75
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-2c2b7dc6-d1b2-4fc1-9cdc-ebf754385e75-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1772981350013-634-org.democratic-csi.iscsi
+    volumeHandle: pvc-2c2b7dc6-d1b2-4fc1-9cdc-ebf754385e75
+  claimRef:
+    namespace: media
+    name: rdt-config-pvc-iscsi

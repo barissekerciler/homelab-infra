@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rdt-config-normalizer
+  labels:
+    app: rdt
+data:
+  normalize-rdt.py: |
+    #!/usr/bin/env python3
+    import sqlite3
+    from pathlib import Path
+
+    DB = Path("/data/db/rdtclient.db")
+    DEFAULTS = ["Gui", "Integrations", "Provider", "Watch"]
+    # Release groups pack tiny .txt/.nfo/.url files into torrents. The internal
+    # downloader can hang on them, leaving the torrent at "Downloading file
+    # 130/130 (100%)" forever, and Sonarr/Radarr never import those files anyway.
+    EXCLUDE_REGEX = r"(?i)\.(txt|nfo|url|exe|lnk|html?|jpe?g|png|gif|bmp)$"
+    SETTINGS = {
+        **{f"{default}:Default:DeleteOnError": "1" for default in DEFAULTS},
+        **{f"{default}:Default:ExcludeRegex": EXCLUDE_REGEX for default in DEFAULTS},
+    }
+
+    if not DB.exists():
+        print(f"{DB} does not exist yet; skipping RDT normalization")
+        raise SystemExit(0)
+
+    con = sqlite3.connect(DB, timeout=30)
+    try:
+        cur = con.cursor()
+        for setting, value in SETTINGS.items():
+            cur.execute(
+                """
+                insert into Settings (SettingId, Value)
+                values (?, ?)
+                on conflict(SettingId) do update set Value = excluded.Value
+                """,
+                (setting, value),
+            )
+
+        cur.execute(
+            """
+            select TorrentId
+              from Torrents
+             where lower(coalesce(Error, '')) like '%torrent lifetime%'
+            """
+        )
+        lifetime_torrent_ids = [row[0] for row in cur.fetchall()]
+
+        if lifetime_torrent_ids:
+            placeholders = ",".join("?" for _ in lifetime_torrent_ids)
+            cur.execute(
+                f"delete from Downloads where TorrentId in ({placeholders})",
+                lifetime_torrent_ids,
+            )
+            downloads_deleted = cur.rowcount
+            cur.execute(
+                f"delete from Torrents where TorrentId in ({placeholders})",
+                lifetime_torrent_ids,
+            )
+            torrents_deleted = cur.rowcount
+        else:
+            downloads_deleted = 0
+            torrents_deleted = 0
+
+        con.commit()
+    finally:
+        con.close()
+
+    print(
+        "RDT config normalized: "
+        f"DeleteOnError and ExcludeRegex set for {len(DEFAULTS)} defaults; "
+        f"removed {torrents_deleted} lifetime-error torrents and {downloads_deleted} downloads"
+    )

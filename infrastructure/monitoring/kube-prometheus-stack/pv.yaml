@@ -1,0 +1,55 @@
+# Prometheus's volume, written down so a rebuilt cluster gives the
+# StatefulSet the same disk: it adopts a claim that already has its name.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvc-8a9c9b14-7a23-48d0-b5da-552eddcb4633
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-iscsi-csi
+  mountOptions:
+  - noatime
+  csi:
+    driver: org.democratic-csi.iscsi
+    nodeStageSecretRef:
+      name: node-stage-secret-freenas-iscsi-csi-democratic-csi-iscsi
+      namespace: democratic-csi-iscsi
+    fsType: ext4
+    volumeAttributes:
+      interface: ''
+      iqn: iqn.2005-10.org.freenas.ctl:csi-pvc-8a9c9b14-7a23-48d0-b5da-552eddcb4633-cluster
+      lun: '0'
+      node_attach_driver: iscsi
+      portal: 10.0.0.203:3260
+      portals: ''
+      provisioner_driver: freenas-api-iscsi
+      provisioner_driver_instance_id: democratic-csi-iscsi
+      storage.kubernetes.io/csiProvisionerIdentity: 1792151047345-5199-org.democratic-csi.iscsi
+    volumeHandle: pvc-8a9c9b14-7a23-48d0-b5da-552eddcb4633
+  claimRef:
+    namespace: monitoring
+    name: prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0
+  namespace: monitoring
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  volumeName: pvc-8a9c9b14-7a23-48d0-b5da-552eddcb4633
+  storageClassName: freenas-iscsi-csi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 30Gi

@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bazarr
+  labels:
+    app: bazarr
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # The SQLite config is on a ReadWriteOnce volume; never run two pods on it.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: bazarr
+  template:
+    metadata:
+      labels:
+        app: bazarr
+    spec:
+      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - homelab
+      initContainers:
+        - name: normalize-config
+          image: linuxserver/bazarr:latest@sha256:946dc8c5bb5331418eac60050cf40a63cb8f66ac039841dda493870e3559799c
+          securityContext:
+            runAsUser: 568
+            runAsGroup: 568
+          command:
+            - python3
+            - /bootstrap/normalize-bazarr.py
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: config-normalizer
+              mountPath: /bootstrap
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+            limits:
+              cpu: 200m
+      containers:
+        - name: bazarr
+          image: linuxserver/bazarr:latest@sha256:946dc8c5bb5331418eac60050cf40a63cb8f66ac039841dda493870e3559799c
+          ports:
+            - containerPort: 6767
+              name: http
+          startupProbe:
+            tcpSocket:
+              port: http
+            failureThreshold: 60
+            periodSeconds: 10
+            timeoutSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 10
+          env:
+            - name: PUID
+              value: "568"
+            - name: PGID
+              value: "568"
+            - name: TZ
+              value: "Etc/UTC"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: sonarr-content
+              mountPath: /content/sonarr
+            - name: radarr-content
+              mountPath: /content/radarr
+          resources:
+            requests:
+              cpu: 10m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: bazarr-iscsi-config-pvc
+        - name: config-normalizer
+          configMap:
+            name: bazarr-config-normalizer
+            defaultMode: 0555
+        - name: sonarr-content
+          persistentVolumeClaim:
+            claimName: sonarr-nfs-content-pvc
+        - name: radarr-content
+          persistentVolumeClaim:
+            claimName: radarr-nfs-content-pvc

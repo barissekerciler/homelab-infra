@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Kept when Flux prunes: the app's TrueNAS volumes and settings outlive a
+# removal from Git.
+commonAnnotations:
+  kustomize.toolkit.fluxcd.io/prune: disabled
+resources:
+  - seerr-pv.yaml
+  - pvc.yaml
+  - service.yaml
+  - ingress.yaml
+  - deployment.yaml

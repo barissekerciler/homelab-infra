@@ -1,0 +1,51 @@
+# Nextcloud (apps/production/nextcloud).
+# Role nextcloud; its password is generated once into OpenBao
+# secret/postgresql/nextcloud-db (apps/base/postgresql/passwords.yaml) and
+# read back by nextcloud-db-secret.yaml.
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: nextcloud-db
+  namespace: postgresql
+spec:
+  refreshInterval: 1h
+  updatePolicy: IfNotExists
+  deletionPolicy: None
+  secretStoreRefs:
+    - kind: SecretStore
+      name: openbao-passwords
+  selector:
+    generatorRef:
+      apiVersion: generators.external-secrets.io/v1alpha1
+      kind: Password
+      name: role-password
+  data:
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: postgresql/nextcloud-db
+          property: password
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: nextcloud
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: nextcloud
+  login: true
+  passwordSecret:
+    name: nextcloud-db
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: nextcloud
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: nextcloud
+  owner: nextcloud

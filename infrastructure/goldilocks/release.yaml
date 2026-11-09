@@ -1,0 +1,60 @@
+# Goldilocks creates a VPA for every Deployment, StatefulSet and DaemonSet
+# (--on-by-default) and shows the recommendations at
+# https://goldilocks.home.bariss.dev (LAN and Tailscale, GitHub sign-in). Every
+# Namespace gets VPA mode Initial from namespace-defaults/ (a kustomize
+# component), so new namespaces and new apps need nothing; a namespace opts out
+# with goldilocks.fairwinds.com/vpa-update-mode: "off" (claude-agents, vpa).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: goldilocks
+spec:
+  releaseName: goldilocks
+  dependsOn:
+    - name: vpa
+      namespace: vpa
+  chart:
+    spec:
+      chart: goldilocks
+      sourceRef:
+        kind: HelmRepository
+        name: fairwinds
+        namespace: flux-system
+      version: 11.2.1
+  interval: 1h0m0s
+  values:
+    controller:
+      flags:
+        on-by-default: true
+        exclude-namespaces: kube-system,kube-public,kube-node-lease,default,flux-system,vpa
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+    dashboard:
+      replicaCount: 1
+      flags:
+        on-by-default: true
+        enable-cost: false
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+      ingress:
+        enabled: true
+        ingressClassName: traefik
+        annotations:
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: "true"
+          traefik.ingress.kubernetes.io/router.middlewares: goldilocks-goldilocks-auth@kubernetescrd
+        hosts:
+          - host: goldilocks.home.bariss.dev
+            paths:
+              - path: /
+                type: Prefix

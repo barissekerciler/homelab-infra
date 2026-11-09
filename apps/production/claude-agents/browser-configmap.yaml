@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claude-browser
+data:
+  start.sh: |
+    #!/usr/bin/env bash
+    # A virtual screen, Chromium driven by Playwright MCP for the box, and
+    # noVNC so the user can watch the screen or sign in to sites by hand.
+    set -u
+    export DISPLAY=:99
+    export PLAYWRIGHT_BROWSERS_PATH=/data/browsers
+    export npm_config_cache=/data/npm-cache
+    mkdir -p /data/apt-archives/partial /data/profile /data/output
+
+    # The root filesystem starts fresh on every restart; the .debs stay on
+    # the volume, so this only downloads once.
+    apt-get update -qq || echo "apt-get update reported errors" >&2
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+      -o Dir::Cache::Archives=/data/apt-archives \
+      xvfb x11vnc novnc websockify fonts-noto-color-emoji >/dev/null || exit 1
+
+    # The Chromium build this @playwright/mcp release expects, kept on the
+    # volume.
+    npx -y playwright@1.64.0-alpha-1790635538000 install chromium >/dev/null || exit 1
+
+    Xvfb :99 -screen 0 1440x960x24 -nolisten tcp &
+    sleep 2
+    x11vnc -display :99 -localhost -forever -shared -nopw -quiet -rfbport 5900 &
+    websockify --web /usr/share/novnc 6080 localhost:5900 &
+
+    # Root in a pod that holds no tokens, and the node blocks the user
+    # namespaces Chromium's sandbox needs: the pod is the sandbox. Only the box
+    # reaches 8931 (networkpolicy). vision adds coordinate clicks on
+    # screenshots, the browser's computer use.
+    npx -y @playwright/mcp@0.0.83 --host 0.0.0.0 --port 8931 --allowed-hosts '*' \
+      --browser chromium --no-sandbox --user-data-dir /data/profile \
+      --shared-browser-context --caps vision,pdf --viewport-size 1280x800 \
+      --output-dir /data/output &
+
+    # Any part dying restarts the pod.
+    wait -n
+    echo "a browser process exited" >&2
+    exit 1

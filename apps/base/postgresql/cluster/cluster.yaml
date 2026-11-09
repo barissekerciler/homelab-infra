@@ -1,0 +1,59 @@
+# What both PostgreSQL clusters share. The overlays give each its name, size
+# and backups: apps/production/postgresql (the main cluster `postgres`, backed
+# up) and apps/dev/postgresql (the pantry `postgres-pantry`, not backed up).
+# CloudNativePG (infrastructure/cloudnative-pg); runbook:
+# apps/production/postgresql/README.md.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+  annotations:
+    # Like the Namespaces and PVCs: deleting the Cluster deletes its claims,
+    # so Flux never prunes it.
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  # Each overlay sets its own count.
+  instances: 1
+  # tensorchord's CloudNativePG image: PostgreSQL 17 with VectorChord 1.1.1 and
+  # pgvector 0.8, for Immich.
+  imageName: ghcr.io/tensorchord/cloudnative-vectorchord:17.11-1.1.1@sha256:bb7eb8442f76b1e74911f28585019a77022911f8cfa2ddcfb166ea6af85abd09
+  primaryUpdateStrategy: unsupervised
+  # The superuser password comes from OpenBao
+  # (apps/base/postgresql/postgres-superuser-secret.yaml).
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: postgres-superuser
+  bootstrap:
+    initdb:
+      # libc en_US.UTF-8, the locale the apps' databases expect.
+      encoding: UTF8
+      localeCollate: en_US.UTF-8
+      localeCType: en_US.UTF-8
+      dataChecksums: true
+  postgresql:
+    parameters:
+      timezone: Europe/Berlin
+      log_timezone: Europe/Berlin
+      max_connections: "200"
+      # homelab2 has 7 GB of RAM, and CloudNativePG wants the memory request
+      # to cover shared_buffers.
+      shared_buffers: 512MB
+      effective_cache_size: 2GB
+      maintenance_work_mem: 256MB
+      # The volumes sit on the NAS's HDD mirror: timed checkpoints every 30
+      # minutes keep full-page images (and sync writes) down; a requested
+      # checkpoint starts at ~max_wal_size / 1.9.
+      checkpoint_timeout: 30min
+      max_wal_size: 16GB
+      wal_compression: zstd
+  # The request is low so an instance fits homelab2; the limit is what the
+  # primary may use.
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 3Gi
+  storage:
+    storageClass: freenas-iscsi-csi
