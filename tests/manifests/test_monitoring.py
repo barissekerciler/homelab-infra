@@ -205,3 +205,12 @@ def test_flux_leaves_grafanas_variables_alone():
                                                         .read_text(encoding="utf-8"))
               if row and row["metadata"]["name"] == "infrastructure"]
     assert spec["path"] == "./infrastructure" and "postBuild" not in spec
+
+
+def test_reloader_restarts_everything_but_prometheus():
+    # The rule files ConfigMap changes with every PrometheusRule; the
+    # config-reloader loads it, a restart would take Prometheus down.
+    values = resource("HelmRelease", "kube-prometheus-stack")["spec"]["values"]
+    assert values["prometheus"]["annotations"] == {"reloader.stakater.com/auto": "false"}
+    reloader = yaml.safe_load((ROOT / "infrastructure/reloader/release.yaml").read_text(encoding="utf-8"))
+    assert reloader["spec"]["values"]["reloader"]["autoReloadAll"] is True
