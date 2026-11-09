@@ -15,6 +15,30 @@ spec:
         namespace: flux-system
   interval: 1h0m0s
   timeout: 20m0s
+  # The chart's init script copies plugins with `yes n | cp -i` under set -e,
+  # which fails once the plugin emptyDir holds them. When Talos's OOM
+  # controller kills the pod, kubelet reruns the init containers in the same
+  # pod and the controller stays in CrashLoopBackOff. Empty the directory first.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: StatefulSet
+              name: jenkins
+            patch: |
+              apiVersion: apps/v1
+              kind: StatefulSet
+              metadata:
+                name: jenkins
+              spec:
+                template:
+                  spec:
+                    initContainers:
+                      - name: init
+                        command:
+                          - sh
+                          - -c
+                          - rm -rf /var/jenkins_plugins/* && exec sh /var/jenkins_config/apply_config.sh
   values:
     controller:
       replicas: 1
