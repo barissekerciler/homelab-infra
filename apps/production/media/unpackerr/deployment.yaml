@@ -33,7 +33,7 @@ spec:
         fsGroup: 568
       containers:
         - name: unpackerr
-          image: golift/unpackerr:0.16.1@sha256:244fc45cb207308f60e8f52dd703c2b3463385752de0f9517c58ff9d331ed15e
+          image: golift/unpackerr:1.0.1@sha256:fc8b69571033f197d4db5cf22a573acb3bb891c9f8033431b9a1fcf679ca3e9c
           env:
             - name: TZ
               value: Etc/UTC
@@ -55,6 +55,11 @@ spec:
               value: "0775"
             - name: UN_LOG_QUEUES
               value: 5m
+            # v1 starts a web UI on 0.0.0.0:5656 by default and logs a
+            # generated admin password. Keep it off: Sonarr and Radarr are
+            # set here, and there is no /config volume for the UI to save to.
+            - name: UN_WEBSERVER_LISTEN_ADDR
+              value: ""
             - name: UN_SONARR_0_URL
               value: http://sonarr.media.svc.cluster.local:8989
             - name: UN_SONARR_0_PATHS_0
