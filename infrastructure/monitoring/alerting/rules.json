@@ -97,7 +97,7 @@
                   "type": "prometheus",
                   "uid": "prometheus"
                 },
-                "expr": "max without (alertname, alertstate) (label_replace(ALERTS{alertstate=\"firing\",severity=\"critical\"} or ALERTS{alertstate=\"firing\",severity=\"warning\",namespace!~\"jenkins|claude-agents|.+-dev\",alertname!~\"NodeSystemSaturation|NodeDiskIOSaturation|NodeMemoryMajorPagesFaults\"}, \"alert\", \"$1\", \"alertname\", \"(.+)\"))",
+                "expr": "max without (alertname, alertstate) (label_replace(ALERTS{alertstate=\"firing\",severity=\"critical\"} or ALERTS{alertstate=\"firing\",severity=\"warning\",namespace!~\"claude-agents|.+-dev\",alertname!~\"NodeSystemSaturation|NodeDiskIOSaturation|NodeMemoryMajorPagesFaults\"}, \"alert\", \"$1\", \"alertname\", \"(.+)\"))",
                 "instant": true,
                 "range": false
               }

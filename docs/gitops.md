@@ -344,10 +344,13 @@ delete them.
   are:
   - `Prometheus alert` forwards Prometheus' own alerts (kube-prometheus-stack's
     rules) from its `ALERTS` series: every critical one, and the warnings
-    except those in `jenkins`, `claude-agents` and the `-dev` namespaces and
-    the node saturation warnings, which fire under normal load. The message
-    names the alert and where it fired; the rule's text is in Grafana's alert
-    list.
+    except those in `claude-agents` and the `-dev` namespaces and the node
+    saturation warnings, which fire under normal load. A pod stuck for 15
+    minutes (`ContainerCreating`, an image pull, an init container or
+    unschedulable: `KubePodNotReady`) or crash-looping
+    (`KubePodCrashLooping`) arrives this way, Jenkins' build pods included.
+    The message names the alert and where it fired; the rule's text is in
+    Grafana's alert list.
   - NAS: TrueNAS unreachable, a ZFS pool not online, pool1 below 1.5 TB free
     (critical below 750 GB), a disk at 50 °C (critical at 55 °C).
   - Backups: PostgreSQL's last base backup or a nightly backup job
