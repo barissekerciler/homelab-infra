@@ -24,7 +24,7 @@ Cloudflare tunnel, and the rest is reachable on the LAN and over Tailscale only.
 | --- | --- |
 | OS and upgrades | Talos Linux, [tuppr](https://github.com/home-operations/tuppr) for Talos/Kubernetes patch upgrades |
 | GitOps | Flux (kustomize, helm, image automation), Flux Operator Web UI, checks on Jenkins |
-| Networking | Cilium (CNI, NetworkPolicies, no kube-proxy, WireGuard between the nodes), Traefik, cert-manager, cloudflared, AdGuard Home |
+| Networking | Cilium (CNI, NetworkPolicies, no kube-proxy, WireGuard between the nodes), Traefik, cert-manager, cloudflared, AdGuard Home, gluetun (VPN proxy) |
 | Storage | democratic-csi (TrueNAS iSCSI/NFS) with pinned volumes, SeaweedFS (S3 for backups, a TrueNAS app) |
 | Secrets | OpenBao + External Secrets Operator; SOPS/age only for the storage driver bootstrap |
 | Databases | CloudNativePG: a backed-up main cluster and an expendable "pantry" cluster |

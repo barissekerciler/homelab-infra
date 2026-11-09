@@ -19,9 +19,9 @@ Nothing listens, so there is no Service or Ingress.
   rules of the box: changes through Git only, no SOPS private key, and which
   places are blocked.
 - `job.sh` runs heavy work (duckdb, pandas, model fits, bulk downloads) in a
-  pod of its own in claude-agents instead of in the box. The box has 4 GiB on
-  the 7 GiB node homelab2, and one large job there would push the node into
-  swap and stall every Remote Control session. The script copies the working
+  pod of its own in claude-agents instead of in the box. The box has 4 GiB and
+  may run on homelab2, which has 7.5 GiB in all; one large job there would
+  push the node into swap and stall every Remote Control session. The script copies the working
   directory in, runs the command with a memory limit, streams the log, copies
   the results back and deletes the pod.
 - The NetworkPolicy keeps the box away from private data: the NAS

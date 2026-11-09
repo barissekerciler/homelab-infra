@@ -1,8 +1,9 @@
 # Custom resources whose CRDs come from charts in the infrastructure
-# Kustomization (Traefik, kube-prometheus-stack). Flux dry-runs a whole path
-# before it applies any of it, so beside the HelmReleases they would stop an
-# empty cluster from ever installing those charts. The infrastructure-configs
-# Kustomization applies this path once infrastructure reports the CRDs.
+# Kustomization (Traefik, kube-prometheus-stack, tuppr). Flux dry-runs a whole
+# path before it applies any of it, so beside the HelmReleases they would stop
+# an empty cluster from ever installing those charts. The
+# infrastructure-configs Kustomization applies this path once infrastructure
+# reports the CRDs.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

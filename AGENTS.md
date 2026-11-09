@@ -56,8 +56,9 @@ of them.
 3. `external-secrets`, `cert-manager` and `cert-issuers` run first;
    `infrastructure` waits for `sources` and `cert-issuers` and turns Ready once
    its charts' CRDs exist (health checks).
-4. `infrastructure-configs`, `democratic-csi`, `postgresql`, `prod`
-   (`apps/production`) and `dev` (`apps/dev`) wait for `infrastructure`.
+4. `infrastructure-configs`, `democratic-csi` and `postgresql` wait for
+   `infrastructure`; `prod` (`apps/production`) and `dev` (`apps/dev`) wait
+   for `infrastructure` and `postgresql`.
 5. `tenants` waits for `infrastructure`; each tenant's Kustomizations wait for
    the platform Kustomizations they build on.
 6. Helm applications use a `release.yaml` HelmRelease beside their resources,
@@ -72,6 +73,8 @@ of them.
   and NetworkPolicy enforcement; hostPorts answer on the LAN NIC and
   `tailscale0` (`talos/README.md`)
 - `traefik` (ingress, TLS), `cert-manager`, `cloudflared` (tunnel for public hosts)
+- `gluetun` (`apps/production/gluetun`): VPN proxy for the clients its
+  NetworkPolicy admits
 - `democratic-csi`: TrueNAS iSCSI and NFS storage
 - `external-secrets` + `openbao` (`apps/production/openbao`): every Secret except
   the bootstrap ones
