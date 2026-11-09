@@ -16,7 +16,7 @@ spec:
         kind: HelmRepository
         name: home-operations
         namespace: flux-system
-      version: 0.5.12
+      version: 0.5.13
   interval: 1h0m0s
   install:
     crds: CreateReplace

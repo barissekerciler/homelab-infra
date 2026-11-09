@@ -26,7 +26,7 @@ spec:
             - --config
             - /etc/cloudflared/config/config.yaml
             - run
-          image: cloudflare/cloudflared:2026.10.3
+          image: cloudflare/cloudflared:2026.10.7
           env:
             - name: CLOUDFLARED_LOGLEVEL
               # debug logs every request's headers (cookies, Authorization)
