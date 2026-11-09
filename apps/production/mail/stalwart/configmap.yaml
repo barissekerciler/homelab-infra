@@ -8,7 +8,7 @@ data:
       "@type": "PostgreSql",
       "host": "postgres-rw.postgresql.svc.cluster.local",
       "port": 5432,
-      "database": "stalwart",
+      "database": "stalwart_v1",
       "authUsername": "stalwart",
       "authSecret": {
         "@type": "EnvironmentVariable",
