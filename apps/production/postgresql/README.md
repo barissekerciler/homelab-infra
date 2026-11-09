@@ -85,8 +85,8 @@ there, never corrupt data.
 ## Superuser access
 
 ```sh
-kubectl -n postgresql exec -it postgres-2 -c postgres -- psql      # the primary; peer login as postgres
-kubectl -n postgresql get cluster postgres                          # which instance is primary
+primary=$(kubectl -n postgresql get cluster postgres -o jsonpath='{.status.currentPrimary}')
+kubectl -n postgresql exec -it "$primary" -c postgres -- psql      # peer login as postgres
 ```
 
 ## Failover and node maintenance

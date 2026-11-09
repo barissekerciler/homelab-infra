@@ -135,11 +135,11 @@ CloudNativePG HelmReleases in `infrastructure` install the `traefik.io`,
 
 - `infrastructure` itself holds no objects of those kinds. Custom resources for
   its charts live in subdirectories that `infrastructure/configs/` lists:
-  `traefik/tls-store/`, `flux-operator/web-auth/` and `monitoring/scrape/`.
+  `traefik/tls-store/`, `flux-operator/web-auth/`, `goldilocks/web-auth/`,
+  `tuppr/upgrades/` and `monitoring/scrape/`.
 - `infrastructure` health-checks every such CRD that a later Kustomization uses
   (`clusters/homelab/infrastructure.yaml`). It turns Ready once Helm has
-  installed them, and only then do `infrastructure-configs`, `prod`, `dev` and
-  `democratic-csi` start.
+  installed them, and only then do the Kustomizations that depend on it start.
 
 `tests/flux/test_cold_start.py` fails when an object of a chart CRD kind lands
 in `infrastructure`, or when a later Kustomization uses a CRD that is not
@@ -363,8 +363,6 @@ delete them.
   Its udev data names the disks by SATA port on the dashboard. Tenants add
   their own targets and dashboards (ScrapeConfigs and labelled ConfigMaps in
   `monitoring`) from their repositories.
-
-No workload is pinned to a node.
 
 ## Image automation
 

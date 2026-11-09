@@ -172,9 +172,7 @@ give the new one the old address and turn off its key expiry.
 
 Every PV lives on TrueNAS and is pinned in Git, so a rebuilt cluster binds the
 same volumes; the claude-agents volumes that the Claude Code box makes with
-kubectl are pinned in `apps/production/claude-agents/agent-volumes.yaml`. A
-new cluster signs its own ServiceAccount tokens, so Home Assistant's media
-power tool then needs a new one.
+kubectl are pinned in `apps/production/claude-agents/agent-volumes.yaml`.
 
 ## Upgrades
 
