@@ -15,13 +15,13 @@ spec:
         kind: HelmRepository
         name: oauth2-proxy
         namespace: flux-system
-      version: 10.7.1
+      version: 10.7.2
   interval: 1h0m0s
   values:
     image:
       registry: quay.io
       repository: oauth2-proxy/oauth2-proxy
-      tag: "v7.15.5"
+      tag: "v7.15.6"
     proxyVarsAsSecrets: true
     config:
       existingSecret: oauth2-proxy-secret

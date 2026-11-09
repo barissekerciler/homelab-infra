@@ -21,7 +21,7 @@ spec:
         kind: HelmRepository
         name: autoscaler
         namespace: flux-system
-      version: 0.15.0
+      version: 0.16.0
   interval: 1h0m0s
   values:
     admissionController:

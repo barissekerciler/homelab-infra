@@ -85,7 +85,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: copy
-              image: rclone/rclone:1.75.2
+              image: rclone/rclone:1.76.0
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/sh

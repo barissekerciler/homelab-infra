@@ -86,7 +86,7 @@ flowchart TB
 
 ## Flux
 
-Flux v2.9.6 runs from `clusters/homelab/flux-system/`. It follows `main` of
+Flux v2.10.0 runs from `clusters/homelab/flux-system/`. It follows `main` of
 this repository and applies the Kustomizations in `clusters/homelab/`:
 
 | Kustomization | Path | Depends on |
