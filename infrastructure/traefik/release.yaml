@@ -29,6 +29,13 @@ spec:
     # Service.
     deployment:
       kind: DaemonSet
+    # A surge pod cannot start next to the old one: both want the same
+    # hostPorts on the node. Replace one node's pod at a time instead.
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
     service:
       enabled: true
       single: true
