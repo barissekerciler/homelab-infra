@@ -49,3 +49,17 @@ spec:
     name: postgres
   name: stalwart
   owner: stalwart
+---
+# Stalwart v1's store. v1 cannot open the v0.16 layout in `stalwart`, so
+# stalwart-migrate (apps/production/mail/stalwart/migrate.yaml) copies the data
+# into this new database; `stalwart` stays untouched as the way back.
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: stalwart-v1
+  namespace: postgresql
+spec:
+  cluster:
+    name: postgres
+  name: stalwart_v1
+  owner: stalwart
