@@ -95,7 +95,9 @@ found something those explanations miss:
 5. `tenants` waits for `infrastructure`; each tenant's Kustomizations wait for
    the platform Kustomizations they build on.
 6. Helm applications use a `release.yaml` HelmRelease beside their resources,
-   with pinned chart versions and inline values.
+   with pinned chart versions and inline values. The line above `version:`
+   links that version's `values.yaml`; a chart bump updates the link too
+   (`tests/manifests/test_helm_values_links.py`).
 
 ## Key components
 

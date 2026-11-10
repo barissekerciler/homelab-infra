@@ -15,6 +15,7 @@ spec:
   chart:
     spec:
       chart: cilium
+      # https://github.com/cilium/cilium/blob/v1.20.4/install/kubernetes/cilium/values.yaml
       version: 1.20.4
       sourceRef:
         kind: HelmRepository

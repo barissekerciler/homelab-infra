@@ -11,6 +11,7 @@ spec:
         kind: HelmRepository
         name: descheduler
         namespace: flux-system
+      # https://github.com/kubernetes-sigs/descheduler/blob/descheduler-helm-chart-0.37.0/charts/descheduler/values.yaml
       version: 0.37.0
   interval: 1h0m0s
   install:

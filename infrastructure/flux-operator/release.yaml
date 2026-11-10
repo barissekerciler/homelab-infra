@@ -11,6 +11,7 @@ spec:
   chart:
     spec:
       chart: flux-operator
+      # https://artifacthub.io/packages/helm/flux-operator/flux-operator/0.62.1?modal=values
       version: 0.62.1
       sourceRef:
         kind: HelmRepository

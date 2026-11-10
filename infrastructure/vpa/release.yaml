@@ -21,6 +21,7 @@ spec:
         kind: HelmRepository
         name: autoscaler
         namespace: flux-system
+      # https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-chart-0.16.0/vertical-pod-autoscaler/charts/vertical-pod-autoscaler/values.yaml
       version: 0.16.0
   interval: 1h0m0s
   values:

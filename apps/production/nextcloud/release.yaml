@@ -10,6 +10,7 @@ spec:
   chart:
     spec:
       chart: nextcloud
+      # https://github.com/nextcloud/helm/blob/nextcloud-9.4.1/charts/nextcloud/values.yaml
       version: 9.4.1
       sourceRef:
         kind: HelmRepository
