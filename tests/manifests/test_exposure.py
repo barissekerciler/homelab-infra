@@ -47,15 +47,6 @@ def test_no_service_answers_on_node_ports():
                 assert row["spec"].get("type", "ClusterIP") == "ClusterIP", row["metadata"]["name"]
 
 
-def test_the_flux_ui_admits_only_traefik():
-    values = one("infrastructure", "HelmRelease", "flux-operator")["spec"]["values"]
-    # The chart's own policy admits every namespace.
-    assert values["web"]["networkPolicy"] == {"create": False}
-    policy = one("infrastructure", "NetworkPolicy", "flux-operator-web")
-    assert ingress_from(policy) == [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}}]
-    assert [port["port"] for rule in policy["spec"]["ingress"] for port in rule["ports"]] == [9080]
-
-
 def test_passwordless_services_admit_only_their_clients():
     gluetun = one("apps/production", "NetworkPolicy", "gluetun")
     # Traefik by name; tenant namespaces by a label they set themselves, so

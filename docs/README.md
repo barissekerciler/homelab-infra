@@ -2,7 +2,7 @@
 
 - [Architecture and GitOps](gitops.md): overview diagram and hosts, Flux and
   the order it applies things in, CRDs from charts, bootstrap, network, the
-  Flux Web UI and its sign-in, secrets, Helm, monitoring, image automation,
+  GitHub sign-in for admin UIs, secrets, Helm, monitoring, image automation,
   CI, backups and disaster recovery.
 - [Design decisions and trade-offs](design-decisions.md): what a review tends
   to flag, and why it is the way it is.

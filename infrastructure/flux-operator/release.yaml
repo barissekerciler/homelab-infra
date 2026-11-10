@@ -1,3 +1,5 @@
+# Only for its flux_resource_info metrics, which the Flux alert and the Homelab
+# dashboard read. There is no FluxInstance; the Web UI is off.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -28,28 +30,4 @@ spec:
         cpu: "1"
         memory: 1Gi
     web:
-      # The chart's policy admits the UI port from every namespace; ours
-      # admits only Traefik (networkpolicy.yaml).
-      networkPolicy:
-        create: false
-      config:
-        baseURL: https://flux.home.bariss.dev
-        # oauth2-proxy (GitHub) guards the route; everyone past it acts as flux-web-admins.
-        authentication:
-          type: Anonymous
-          anonymous:
-            username: flux-web
-            groups:
-              - flux-web-admins
-      ingress:
-        enabled: true
-        className: traefik
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          traefik.ingress.kubernetes.io/router.tls: "true"
-          traefik.ingress.kubernetes.io/router.middlewares: flux-system-flux-web-auth@kubernetescrd
-        hosts:
-          - host: flux.home.bariss.dev
-            paths:
-              - path: /
-                pathType: Prefix
+      enabled: false

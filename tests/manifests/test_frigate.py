@@ -12,7 +12,7 @@ import subprocess
 import pytest
 import yaml
 
-from test_flux_web_auth import config_lines
+from test_home_sign_in import config_lines
 from private_values import home, need, oauth2_proxy_namespace, oauth2_proxy_url
 
 

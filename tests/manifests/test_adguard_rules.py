@@ -24,5 +24,5 @@ def test_every_other_name_answers_both_nodes(name, client):
 def test_no_cluster_host_name_is_listed():
     # The wildcard answers every cluster host; listing one here is a mistake.
     text = CONFIG.read_text(encoding="utf-8")
-    for word in ("grafana", "openbao", "flux.home"):
+    for word in ("grafana", "openbao"):
         assert word not in text, word

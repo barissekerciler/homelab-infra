@@ -157,7 +157,7 @@ uploading, and `nas-push` catches up on the last 72 h when the mirror is back.
 - **Router:** the DNAT, the camera's lease and the nft include on the Cudy
 - **NAS:** the `cam-records` dataset and its NFS export
 - **GitHub App:** the callback `https://cam.home.bariss.dev/oauth2/callback`
-  ([`docs/gitops.md`](../../../docs/gitops.md#web-ui))
+  ([`docs/gitops.md`](../../../docs/gitops.md#sign-in))
 - **Escrow outside the house:** the crypt password and salt, and the SOPS age key
 
 ## Known limit: node-local access

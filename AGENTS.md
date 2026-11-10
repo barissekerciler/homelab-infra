@@ -101,8 +101,10 @@ found something those explanations miss:
 
 ## Key components
 
-- `flux` with image automation; `flux-operator` only for its Web UI behind
-  GitHub sign-in (`infrastructure/oauth2-proxy/home-bariss-dev`)
+- `flux` with image automation; `flux-operator` only for its Flux metrics
+  (`flux_resource_info`), without a FluxInstance or its Web UI
+- `oauth2-proxy` (`infrastructure/oauth2-proxy/home-bariss-dev`): GitHub
+  sign-in in front of the admin UIs
 - `jenkins`: CI, including this repository's checks (`Jenkinsfile`)
 - `cilium`: CNI (VXLAN, WireGuard between the nodes), kube-proxy replacement
   and NetworkPolicy enforcement; hostPorts answer on the LAN NIC and
@@ -181,7 +183,7 @@ commit plaintext secret values.
   externalIPs); reach a LAN host through a Traefik route. An app without a
   login of its own gets a NetworkPolicy that admits only its clients, and a
   new admin UI goes behind the GitHub sign-in
-  ([docs/gitops.md](docs/gitops.md#network), `tests/manifests/test_exposure.py`).
+  ([docs/gitops.md](docs/gitops.md#sign-in), `tests/manifests/test_exposure.py`).
 - **Retention**: Namespaces, PersistentVolumes and PersistentVolumeClaims carry
   `kustomize.toolkit.fluxcd.io/prune: disabled`. Deleting a Namespace also
   deletes its PVCs, so keep that protection on Namespaces too. Delete PVCs only

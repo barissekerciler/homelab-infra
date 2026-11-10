@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 import yaml
-from private_values import home, need, oauth2_proxy_namespace, oauth2_proxy_url
+from private_values import home, need, oauth2_proxy_namespace
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -40,22 +40,10 @@ def config_lines(release):
     }
 
 
-class FluxWebAuthManifestTest(unittest.TestCase):
+class HomeSignInManifestTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.infrastructure = render(REPO_ROOT / "infrastructure")
-        cls.configs = render(REPO_ROOT / "infrastructure" / "configs")
-
-    def test_flux_web_route_uses_github_forward_auth(self):
-        middleware = resource(self.configs, "Middleware", "flux-web-auth", "flux-system")
-        self.assertEqual(middleware["spec"], {"forwardAuth": {"address": oauth2_proxy_url()}})
-
-        release = resource(self.infrastructure, "HelmRelease", "flux-operator", "flux-system")
-        annotations = release["spec"]["values"]["web"]["ingress"]["annotations"]
-        self.assertEqual(
-            annotations["traefik.ingress.kubernetes.io/router.middlewares"],
-            "flux-system-flux-web-auth@kubernetescrd",
-        )
 
     def test_only_the_owner_github_account_may_sign_in(self):
         release = resource(
@@ -67,14 +55,14 @@ class FluxWebAuthManifestTest(unittest.TestCase):
         self.assertEqual(config["upstreams"], '[ "static://202" ]')
         self.assertEqual(config["reverse_proxy"], "true")
 
-    def test_sign_in_callback_is_served_on_the_flux_host(self):
+    def test_sign_in_callback_is_served_on_every_protected_host(self):
         release = resource(
             self.infrastructure, "HelmRelease", "oauth2-proxy", oauth2_proxy_namespace()
         )
         ingress = release["spec"]["values"]["ingress"]
         self.assertEqual(ingress["path"], "/oauth2/")
         self.assertEqual(ingress["hosts"], [home(name) for name in (
-            "flux", "cam", "agent-browser", "goldilocks", "openbao", "analytics")])
+            "cam", "agent-browser", "goldilocks", "openbao", "analytics")])
         self.assertEqual(
             ingress["annotations"]["traefik.ingress.kubernetes.io/router.entrypoints"], "websecure"
         )
