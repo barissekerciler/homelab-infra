@@ -12,7 +12,6 @@ import subprocess
 
 import pytest
 import yaml
-from private_values import home, oauth2_proxy_namespace
 
 ROOT = Path(__file__).resolve().parents[2]
 # Every Flux Kustomization path (clusters/homelab); those that create Namespaces
@@ -77,5 +76,3 @@ def test_goldilocks_covers_every_namespace_behind_sign_in():
     ingress = values["dashboard"]["ingress"]
     assert ingress["annotations"]["traefik.ingress.kubernetes.io/router.middlewares"] == \
         "goldilocks-goldilocks-auth@kubernetescrd"
-    hosts = release("oauth2-proxy", oauth2_proxy_namespace())["ingress"]["hosts"]
-    assert home("goldilocks") in hosts

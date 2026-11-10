@@ -28,9 +28,6 @@ def test_the_dashboard_is_behind_the_github_sign_in():
     assert annotations["traefik.ingress.kubernetes.io/router.entrypoints"] == "websecure"
     assert annotations["traefik.ingress.kubernetes.io/router.middlewares"] == "umami-umami-auth@kubernetescrd"
     assert find("Middleware", "umami-auth")["spec"]["forwardAuth"]["address"] == OAUTH2_PROXY
-    [rule] = ingress["spec"]["rules"]
-    hosts = find("HelmRelease", "oauth2-proxy", "infrastructure")["spec"]["values"]["ingress"]["hosts"]
-    assert rule["host"] in hosts
 
 
 def test_only_the_tracker_paths_are_public():

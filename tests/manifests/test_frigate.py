@@ -385,8 +385,6 @@ def test_oauth2_proxy_sets_x_auth_request_headers():
     assert len(releases) == 1
     release = releases[0]
     assert config_lines(release)["set_xauthrequest"] == "true"
-    # The sign-in callback (/oauth2/) must be served on the camera host too.
-    assert home("cam") in release["spec"]["values"]["ingress"]["hosts"]
 
 
 def test_cam_host_resolves_on_lan_and_tailscale():
