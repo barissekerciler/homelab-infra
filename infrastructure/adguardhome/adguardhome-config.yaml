@@ -198,6 +198,7 @@ user_rules:
 
   - "!- general config"
   - "@@||bariss.dev^$important"
+  - "@@||umami.is^$important"
 
   - "!- LG TV config"
   # Blocks the TV's built-in Alexa and Amazon telemetry for the TV only.
