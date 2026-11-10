@@ -35,13 +35,6 @@
   },
   "links": [
     {
-      "title": "Flux",
-      "type": "link",
-      "url": "https://flux.home.bariss.dev",
-      "targetBlank": true,
-      "icon": "external link"
-    },
-    {
       "title": "Kubernetes dashboards",
       "type": "dashboards",
       "tags": [
@@ -377,14 +370,7 @@
                 "value": 1
               }
             ]
-          },
-          "links": [
-            {
-              "title": "Flux UI",
-              "url": "https://flux.home.bariss.dev",
-              "targetBlank": true
-            }
-          ]
+          }
         },
         "overrides": []
       },

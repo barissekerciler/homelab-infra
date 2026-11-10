@@ -139,8 +139,8 @@ CloudNativePG HelmReleases in `infrastructure` install the `traefik.io`,
 
 - `infrastructure` itself holds no objects of those kinds. Custom resources for
   its charts live in subdirectories that `infrastructure/configs/` lists:
-  `traefik/tls-store/`, `flux-operator/web-auth/`, `goldilocks/web-auth/`,
-  `tuppr/upgrades/` and `monitoring/scrape/`.
+  `traefik/tls-store/`, `goldilocks/web-auth/`, `tuppr/upgrades/` and
+  `monitoring/scrape/`.
 - `infrastructure` health-checks every such CRD that a later Kustomization uses
   (`clusters/homelab/infrastructure.yaml`). It turns Ready once Helm has
   installed them, and only then do the Kustomizations that depend on it start.
@@ -205,7 +205,7 @@ Every Service is ClusterIP: no NodePorts, LoadBalancers or externalIPs
 - **Traefik** on the nodes' LAN and Tailscale addresses (hostPorts 80 and 443,
   465 and 993 for mail), for every `*.home.bariss.dev` host and the mail
   ports. AdGuard Home resolves those names for LAN and Tailscale clients only
-  ([Web UI](#web-ui)).
+  ([Sign-in](#sign-in)).
 - **AdGuard Home** on the host network for DNS, and Frigate's restream on
   hostPort 8554 for the Pi.
 - **The Cloudflare tunnel** (`infrastructure/cloudflared`) for the public
@@ -215,8 +215,8 @@ Every Service is ClusterIP: no NodePorts, LoadBalancers or externalIPs
   there on two paths of `blog.bariss.dev` ([Umami](../apps/production/umami/README.md)).
 
 Inside the cluster, an app without a login of its own admits only its
-clients: the Flux UI only Traefik, gluetun's proxy only Traefik and the
-namespaces that browse through it, Redis only `media`. node-exporter runs on
+clients: gluetun's proxy only Traefik and the namespaces that browse through
+it, Redis only `media`. node-exporter runs on
 the host network, so a kube-rbac-proxy in front of it answers only
 Prometheus' ServiceAccount token ([Monitoring](#monitoring)). The Claude Code
 namespaces have egress policies that keep them away from private data
@@ -226,24 +226,20 @@ Cilium always admits traffic from a pod's own node, so a process on the node
 or a host-network pod reaches any pod on that node past its NetworkPolicy
 (Frigate's README lists what that exposes there).
 
-## Web UI
+## Sign-in
 
-`infrastructure/flux-operator/` installs the Flux Operator chart only for its
-Web UI at `https://flux.home.bariss.dev`. There is no FluxInstance, so the
-operator does not manage the Flux controllers above. AdGuard resolves the host
-for LAN and Tailscale clients only: one wildcard per client group answers every
-`*.home.bariss.dev` name with both nodes, so a new ingress host needs no DNS
-change. Only the Raspberry Pi's names (Caddy) are listed in
-`infrastructure/adguardhome/adguardhome-config.yaml`
+AdGuard resolves the `*.home.bariss.dev` hosts for LAN and Tailscale clients
+only: one wildcard per client group answers every name with both nodes, so a
+new ingress host needs no DNS change. Only the Raspberry Pi's names (Caddy) are
+listed in `infrastructure/adguardhome/adguardhome-config.yaml`
 (`tests/manifests/test_adguard_rules.py`).
 
-The `flux-web-auth` Traefik middleware (`web-auth/`) sends every request to
-the oauth2-proxy in `infrastructure/oauth2-proxy/home-bariss-dev/`
-(forwardAuth). Only the GitHub account `barissekerciler` may sign in. The
-sign-in uses a GitHub App with:
+Admin UIs without a login of their own sit behind the oauth2-proxy in
+`infrastructure/oauth2-proxy/home-bariss-dev/`: a Traefik forwardAuth
+middleware on their route sends every request to it. Only the GitHub account
+`barissekerciler` may sign in. The sign-in uses a GitHub App with:
 
-- Callback URLs `https://flux.home.bariss.dev/oauth2/callback`,
-  `https://cam.home.bariss.dev/oauth2/callback` (Frigate, `apps/production/frigate`),
+- Callback URLs `https://cam.home.bariss.dev/oauth2/callback` (Frigate, `apps/production/frigate`),
   `https://agent-browser.home.bariss.dev/oauth2/callback` (the Claude box's
   browser, `apps/production/claude-agents`),
   `https://goldilocks.home.bariss.dev/oauth2/callback` (`infrastructure/goldilocks`),
@@ -259,14 +255,8 @@ bao kv patch secret/oauth2-proxy-home-bariss-dev/oauth2-proxy-secret client-id=<
 
 To protect another `*.home.bariss.dev` host, add it to that release's
 `ingress.hosts`, add its `/oauth2/callback` URL to the GitHub App and put a
-forwardAuth middleware like `flux-web-auth` on its route. The session cookie
-covers `.home.bariss.dev`.
-
-Behind that sign-in the UI acts as group `flux-web-admins`, bound to the chart's
-`flux-web-admin` role: view everything, reconcile, suspend, resume and restart.
-The chart's own NetworkPolicy admits every namespace, so it is off; the
-`flux-operator-web` NetworkPolicy in `infrastructure/flux-operator/` admits
-only Traefik, and no pod can reach the UI past the sign-in.
+forwardAuth middleware like `goldilocks-auth` (`infrastructure/goldilocks/web-auth/`)
+on its route. The session cookie covers `.home.bariss.dev`.
 
 ## Secrets
 
@@ -342,8 +332,11 @@ delete them.
   generated ConfigMap. It shows health, used vs reserved capacity per node,
   temperatures, top pods, Flux readiness, Traefik traffic and volume usage.
   Prometheus scrapes flux-operator, Traefik and cert-manager for it
-  (`additionalPodMonitors`). `homelab.py` generates the JSON; edit the script
-  and run it, a test checks the two match.
+  (`additionalPodMonitors`). flux-operator (`infrastructure/flux-operator/`)
+  runs only for its `flux_resource_info` metrics, which the `Flux resource not
+  ready` alert reads too; it has no FluxInstance and its Web UI is off.
+  `homelab.py` generates the JSON; edit the script and run it, a test checks
+  the two match.
 - `alerting/`: Grafana Alerting, loaded by Grafana's alert sidecar from the
   `grafana-alerting` ConfigMap and shown read-only. Notifications go to a
   Telegram chat through a bot; the token and chat id are in the Secret

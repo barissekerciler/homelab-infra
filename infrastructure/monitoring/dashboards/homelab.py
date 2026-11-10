@@ -188,7 +188,7 @@ trouble = stat("Pods in trouble",
 stat("Restarts (24h)", 'round(sum(increase(kube_pod_container_status_restarts_total[24h])))', 9, y,
      thresholds=steps((None, GOOD), (1, WARN), (10, CRIT)), desc="Container restarts in the last 24 hours.")
 stat("Flux not ready", 'count(flux_resource_info{ready!="True"}) or vector(0)', 12, y,
-     thresholds=steps((None, GOOD), (1, CRIT)), link=("Flux UI", "https://flux.home.bariss.dev"),
+     thresholds=steps((None, GOOD), (1, CRIT)),
      desc="Flux resources (Kustomizations, HelmReleases, sources) whose Ready condition is not True.")
 stat("Alerts firing",
      'count(ALERTS{alertstate="firing",severity=~"warning|critical"}) or vector(0)', 15, y,
@@ -572,7 +572,6 @@ dashboard = {
     "templating": {"list": []},
     "annotations": {"list": []},
     "links": [
-        {"title": "Flux", "type": "link", "url": "https://flux.home.bariss.dev", "targetBlank": True, "icon": "external link"},
         {"title": "Kubernetes dashboards", "type": "dashboards", "tags": ["kubernetes-mixin"], "asDropdown": True},
     ],
     "panels": panels,

@@ -46,7 +46,6 @@ spec:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:
-        - flux.home.bariss.dev
         - cam.home.bariss.dev
         - agent-browser.home.bariss.dev
         - goldilocks.home.bariss.dev
