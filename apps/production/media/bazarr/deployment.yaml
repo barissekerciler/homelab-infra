@@ -19,17 +19,6 @@ spec:
       labels:
         app: bazarr
     spec:
-      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - homelab
       initContainers:
         - name: normalize-config
           image: linuxserver/bazarr:latest@sha256:7ef0e58216900dbce30b123e0eb65f5cb30e36f126de9474acdd2022fb069c54

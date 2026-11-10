@@ -20,17 +20,7 @@ spec:
         app: dispatcharr
         component: web
     spec:
-      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - homelab
         # dispatcharr-data-pvc is RWO: web and celery share a node. The first
         # of them to start may pick any node.
         podAffinity:
@@ -176,17 +166,7 @@ spec:
         app: dispatcharr
         component: celery
     spec:
-      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - homelab
         # dispatcharr-data-pvc is RWO: web and celery share a node. The first
         # of them to start may pick any node.
         podAffinity:

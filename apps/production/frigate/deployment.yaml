@@ -25,19 +25,6 @@ spec:
       # Frigate substitutes FRIGATE_* variables into its config; no
       # FRIGATE_SERVICE_HOST, FRIGATE_PORT and the like from the Service.
       enableServiceLinks: false
-      # Not pinned: both nodes have an Intel iGPU, and the Cudy DNAT admits
-      # both node addresses. Recordings live in an emptyDir, so a new pod
-      # starts empty; the NAS and the Storage Box keep the copies.
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - homelab
       securityContext:
         # homelab's render group; the device plugin's node on homelab2 is 0666.
         supplementalGroups:

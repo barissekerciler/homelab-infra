@@ -131,8 +131,7 @@ def test_helm_components_have_bounded_cpu(values_file, key):
 
 
 def test_media_is_not_pinned_and_sonarr_rdt_share_their_rwo_volumes_node():
-    # Both nodes mount NFS since October 16; the new CPU requests may move media
-    # to homelab2 when homelab is full.
+    # Both nodes mount NFS; the scheduler places media on either one.
     result = subprocess.run(
         ["kustomize", "build", "apps/production/media"], cwd=ROOT,
         capture_output=True, text=True, encoding="utf-8", timeout=60, check=True,
@@ -143,8 +142,7 @@ def test_media_is_not_pinned_and_sonarr_rdt_share_their_rwo_volumes_node():
                          if rows[name]["kind"] == "CronJob" else rows[name]["spec"]["template"]["spec"])
     for name in ("bazarr", "radarr", "rdt", "sonarr", "unpackerr", "seerr"):
         assert not spec(name).get("nodeSelector"), name
-        preferred = spec(name)["affinity"]["nodeAffinity"]["preferredDuringSchedulingIgnoredDuringExecution"]
-        assert preferred[0]["preference"]["matchExpressions"][0]["values"] == ["homelab"], name
+        assert "nodeAffinity" not in spec(name).get("affinity", {}), name
     # seerr's RWO volume detaches before the new pod starts.
     assert rows["seerr"]["spec"]["strategy"] == {
         "type": "RollingUpdate", "rollingUpdate": {"maxSurge": 0, "maxUnavailable": 1}}

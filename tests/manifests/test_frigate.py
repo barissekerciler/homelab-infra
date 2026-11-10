@@ -161,8 +161,7 @@ def test_frigate_runs_on_either_node_with_an_igpu():
     assert spec["template"]["metadata"]["labels"]["app"] == "frigate"
     # Both nodes have an Intel iGPU and the Cudy DNAT admits both.
     assert "nodeSelector" not in pod
-    node_affinity = pod["affinity"]["nodeAffinity"]
-    assert "requiredDuringSchedulingIgnoredDuringExecution" not in node_affinity
+    assert "nodeAffinity" not in pod.get("affinity", {})
     frigate = frigate_container(pod)
     assert frigate["resources"]["requests"]["gpu.intel.com/i915"] == "1"
     assert frigate["resources"]["limits"]["gpu.intel.com/i915"] == "1"
@@ -601,7 +600,7 @@ def test_nas_mirror_is_a_separate_pod_on_either_node():
     spec = deployment["spec"]
     pod = mirror_pod()
     assert "nodeSelector" not in pod
-    assert "requiredDuringSchedulingIgnoredDuringExecution" not in pod["affinity"]["nodeAffinity"]
+    assert "nodeAffinity" not in pod.get("affinity", {})
     # Not app: frigate, so the Frigate Service never routes to it and the
     # Traefik-only NetworkPolicy does not select it.
     assert spec["selector"]["matchLabels"] == {"app": "frigate-nas-mirror"}

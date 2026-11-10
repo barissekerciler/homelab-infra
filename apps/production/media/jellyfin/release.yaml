@@ -25,19 +25,6 @@ spec:
     # One writer for the SQLite database on the RWO volume.
     deploymentStrategy:
       type: Recreate
-    # Not pinned: both nodes mount NFS and have an Intel GPU. homelab2's
-    # i5-6500 cannot decode 10-bit HEVC or AV1, so it runs there only when
-    # homelab is down or full.
-    affinity:
-      nodeAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            preference:
-              matchExpressions:
-                - key: kubernetes.io/hostname
-                  operator: In
-                  values:
-                    - homelab
     # TrueNAS's apps user (568) owns the library files. 993 is homelab's render
     # group.
     podSecurityContext:
@@ -91,7 +78,10 @@ spec:
         mountPath: /config/transcodes
       - name: transcodes
         mountPath: /cache/transcodes
-    # The Intel device plugin adds homelab's QuickSync GPU to the pod.
+    # The Intel device plugin adds the node's QuickSync GPU to the pod. Both
+    # nodes have the same i5-6500 iGPU: it decodes H.264, 8-bit HEVC, MPEG-2,
+    # VC-1 and VP8, not 10-bit HEVC or AV1, so Jellyfin's hardware decoding
+    # settings hold on either node.
     resources:
       requests:
         cpu: 50m
