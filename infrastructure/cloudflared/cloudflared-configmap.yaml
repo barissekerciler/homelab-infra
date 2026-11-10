@@ -20,8 +20,6 @@ data:
       service: http://traefik.traefik.svc.cluster.local:80
     - hostname: umami.bariss.dev
       service: http_status:404
-    - hostname: bariss.dev
-      service: http://traefik.traefik.svc.cluster.local:80
     # cloudflared matches wildcards by suffix, so "*.bariss.dev" below would
     # also take every *.home host (LAN and Tailscale only) the moment a public
     # DNS record pointed at the tunnel.
