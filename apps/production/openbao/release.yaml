@@ -29,6 +29,17 @@ spec:
   upgrade:
     remediation:
       retries: 3
+  # The chart's snapshot CronJob has no TTL; finished runs leave after an hour.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: CronJob
+              name: openbao-snapshot
+            patch: |
+              - op: add
+                path: /spec/jobTemplate/spec/ttlSecondsAfterFinished
+                value: 3600
   values:
     injector:
       enabled: false
