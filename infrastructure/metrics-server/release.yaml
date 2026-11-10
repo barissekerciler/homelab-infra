@@ -13,6 +13,7 @@ spec:
         kind: HelmRepository
         name: metrics-server
         namespace: flux-system
+      # https://github.com/kubernetes-sigs/metrics-server/blob/metrics-server-helm-chart-3.14.0/charts/metrics-server/values.yaml
       version: 3.14.0
   interval: 1h0m0s
   install:

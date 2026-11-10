@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: immich
+      # https://github.com/immich-app/immich-charts/blob/immich-0.13.4/charts/immich/values.yaml
       version: 0.13.4
       sourceRef:
         kind: HelmRepository

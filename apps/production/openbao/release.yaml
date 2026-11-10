@@ -17,6 +17,7 @@ spec:
   chart:
     spec:
       chart: openbao
+      # https://github.com/openbao/openbao-helm/blob/openbao-0.30.7/charts/openbao/values.yaml
       version: 0.30.7
       sourceRef:
         kind: HelmRepository

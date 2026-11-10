@@ -16,6 +16,7 @@ spec:
         kind: HelmRepository
         name: home-operations
         namespace: flux-system
+      # https://github.com/home-operations/tuppr/blob/0.5.13/charts/tuppr/values.yaml
       version: 0.5.13
   interval: 1h0m0s
   install:

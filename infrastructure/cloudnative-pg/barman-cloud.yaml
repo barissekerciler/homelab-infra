@@ -15,6 +15,7 @@ spec:
   chart:
     spec:
       chart: plugin-barman-cloud
+      # https://github.com/cloudnative-pg/charts/blob/plugin-barman-cloud-v0.8.1/charts/plugin-barman-cloud/values.yaml
       version: 0.8.1
       sourceRef:
         kind: HelmRepository

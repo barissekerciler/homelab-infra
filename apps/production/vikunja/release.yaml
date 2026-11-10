@@ -11,6 +11,7 @@ spec:
   chart:
     spec:
       chart: vikunja
+      # https://github.com/go-vikunja/helm-chart/blob/v2.6.0/values.yaml
       version: 2.6.0
       sourceRef:
         kind: HelmRepository

@@ -10,6 +10,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
+      # https://github.com/prometheus-community/helm-charts/blob/kube-prometheus-stack-93.1.1/charts/kube-prometheus-stack/values.yaml
       version: 93.1.1
       sourceRef:
         kind: HelmRepository

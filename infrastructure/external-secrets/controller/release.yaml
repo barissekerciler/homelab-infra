@@ -11,6 +11,7 @@ spec:
   chart:
     spec:
       chart: external-secrets
+      # https://github.com/external-secrets/external-secrets/blob/helm-chart-2.14.0/deploy/charts/external-secrets/values.yaml
       version: 2.14.0
       sourceRef:
         kind: HelmRepository

@@ -15,6 +15,7 @@ spec:
         kind: HelmRepository
         name: oauth2-proxy
         namespace: flux-system
+      # https://github.com/oauth2-proxy/manifests/blob/oauth2-proxy-10.7.2/helm/oauth2-proxy/values.yaml
       version: 10.7.2
   interval: 1h0m0s
   values:

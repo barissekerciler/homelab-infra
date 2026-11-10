@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: jellyfin
+      # https://github.com/jellyfin/jellyfin-helm/blob/jellyfin-3.7.0/charts/jellyfin/values.yaml
       version: 3.7.0
       sourceRef:
         kind: HelmRepository
