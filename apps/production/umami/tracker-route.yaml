@@ -1,6 +1,6 @@
-# On the blog's own host, so blocking the tracker blocks the blog; the paths
-# avoid names block lists match. A route for the blog itself on this host
-# takes priority 100: fixed numbers, so Traefik never ranks them by rule length.
+# On the blog's own host, so blocking the tracker blocks the blog. A route for
+# the blog itself on this host takes priority 100: fixed numbers, so Traefik
+# never ranks them by rule length.
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -10,18 +10,8 @@ spec:
     - web
   routes:
     - kind: Rule
-      match: Host(`blog.bariss.dev`) && Path(`/p.js`)
+      match: Host(`blog.bariss.dev`) && (Path(`/p.js`) || Path(`/api/e`))
       priority: 200
-      middlewares:
-        - name: umami-script
-      services:
-        - name: umami
-          port: 3000
-    - kind: Rule
-      match: Host(`blog.bariss.dev`) && Path(`/api/e`)
-      priority: 200
-      middlewares:
-        - name: umami-collect
       services:
         - name: umami
           port: 3000

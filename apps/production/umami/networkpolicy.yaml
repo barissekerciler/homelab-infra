@@ -1,5 +1,4 @@
-# Umami's whole API answers on 3000, sign-in included, so only Traefik (the
-# dashboard and the two tracker paths) and the admin password Job connect.
+# Umami's whole API answers on 3000, sign-in included.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -15,9 +14,6 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: traefik
-        - podSelector:
-            matchLabels:
-              app: umami-admin-password
       ports:
         - protocol: TCP
           port: 3000

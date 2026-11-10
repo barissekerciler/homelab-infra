@@ -1,4 +1,4 @@
-"""Umami: the dashboard behind the GitHub sign-in, only the tracker's two paths public, secrets generated into OpenBao."""
+"""Umami: the dashboard behind the GitHub sign-in, only the tracker's two paths public, APP_SECRET generated into OpenBao."""
 
 from functools import lru_cache
 from pathlib import Path
@@ -36,39 +36,28 @@ def test_the_dashboard_is_behind_the_github_sign_in():
 def test_only_the_tracker_paths_are_public():
     route = find("IngressRoute", "umami-tracker")
     assert route["spec"]["entryPoints"] == ["web"]
-    paths = {}
-    for item in route["spec"]["routes"]:
-        assert item["match"].startswith("Host(`blog.bariss.dev`) && Path(`")
-        # Fixed, above the blog's own route (100): never ranked by rule length.
-        assert item["priority"] == 200
-        [middleware] = item["middlewares"]
-        paths[item["match"].split("Path(`")[1].rstrip("`)")] = \
-            find("Middleware", middleware["name"])["spec"]["replacePath"]["path"]
-    assert paths == {"/p.js": "/script.js", "/api/e": "/api/send"}
+    [item] = route["spec"]["routes"]
+    assert item["match"] == "Host(`blog.bariss.dev`) && (Path(`/p.js`) || Path(`/api/e`))"
+    # Fixed, above the blog's own route (100): never ranked by rule length.
+    assert item["priority"] == 200
+    assert "middlewares" not in item
     env = {row["name"]: row.get("value") for row in
            find("Deployment", "umami")["spec"]["template"]["spec"]["containers"][0]["env"]}
+    assert env["TRACKER_SCRIPT_NAME"] == "p.js"
     assert env["COLLECT_API_ENDPOINT"] == "/api/e"
 
 
-def test_only_traefik_and_the_password_job_connect():
-    policy = find("NetworkPolicy", "umami")
-    [rule] = policy["spec"]["ingress"]
-    assert rule["from"] == [
-        {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}},
-        {"podSelector": {"matchLabels": {"app": "umami-admin-password"}}},
-    ]
-    job = find("Job", "umami-admin-password")
-    assert job["spec"]["template"]["metadata"]["labels"] == {"app": "umami-admin-password"}
+def test_only_traefik_connects():
+    [rule] = find("NetworkPolicy", "umami")["spec"]["ingress"]
+    assert rule["from"] == [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}}]
 
 
-def test_secrets_are_generated_once_into_the_namespaces_own_openbao_path():
-    store = find("SecretStore", "openbao-app-secrets")["spec"]["provider"]["vault"]["auth"]["kubernetes"]
-    assert store["role"] == "app-secrets"
-    pushes = [row for row in rendered("apps/production/umami") if row["kind"] == "PushSecret"]
-    assert {row["metadata"]["name"] for row in pushes} == {"umami-app", "umami-admin"}
-    for push in pushes:
-        spec = push["spec"]
-        assert spec["updatePolicy"] == "IfNotExists"
-        assert spec["secretStoreRefs"] == [{"kind": "SecretStore", "name": "openbao-app-secrets"}]
-        [item] = spec["data"]
-        assert item["match"]["remoteRef"]["remoteKey"] == f"umami/{push['metadata']['name']}"
+def test_app_secret_is_generated_once_into_its_openbao_path():
+    store = find("SecretStore", "openbao-secrets")["spec"]["provider"]["vault"]["auth"]["kubernetes"]
+    assert store == {"mountPath": "kubernetes", "role": "umami-secrets",
+                     "serviceAccountRef": {"name": "umami-secrets"}}
+    push = find("PushSecret", "umami-app")["spec"]
+    assert push["updatePolicy"] == "IfNotExists"
+    assert push["secretStoreRefs"] == [{"kind": "SecretStore", "name": "openbao-secrets"}]
+    [item] = push["data"]
+    assert item["match"]["remoteRef"] == {"remoteKey": "umami/umami-app", "property": "APP_SECRET"}
