@@ -71,7 +71,7 @@ of them.
 - `flux` with image automation; `flux-operator` only for its Flux metrics
   (`flux_resource_info`), without a FluxInstance or its Web UI
 - `oauth2-proxy` (`infrastructure/oauth2-proxy/home-bariss-dev`): GitHub
-  sign-in in front of the admin UIs
+  sign-in in front of the admin UIs, all through `auth.home.bariss.dev`
 - `jenkins`: CI, including this repository's checks (`Jenkinsfile`)
 - `cilium`: CNI (VXLAN, WireGuard between the nodes), kube-proxy replacement
   and NetworkPolicy enforcement; hostPorts answer on the LAN NIC and

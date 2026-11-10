@@ -53,6 +53,18 @@ pieces fit together: [Architecture and GitOps](gitops.md).
   `*.home.bariss.dev` name. Everything else is reachable on the LAN and over
   Tailscale only, and the admin UIs ask for a sign-in on top
   ([Network](gitops.md#network)).
+- **Umami's tracker is public, on a host of its own.** The blog runs on
+  Cloudflare Pages, outside the cluster. A Pages Function serves Umami's
+  script and collect endpoint from the blog's own host and forwards them to
+  `umami.bariss.dev`, where the tunnel and Traefik pass only those two paths;
+  the dashboard and Umami's own sign-in stay on the LAN behind the GitHub
+  sign-in. Visitors only ever see the blog's host, so a blocker that stops
+  the tracker stops the blog ([Umami](../apps/production/umami/README.md)).
+- **One sign-in host for the admin UIs.** Every `*.home.bariss.dev` route
+  signs in through `auth.home.bariss.dev`, the GitHub App's only callback URL,
+  so a new UI needs only the forwardAuth middleware. GitHub's wildcard
+  matching for callback URLs would do the same, but GitHub warns against it
+  and it stays off ([Sign-in](gitops.md#sign-in)).
 - **NetworkPolicies do not fence a pod's own node.** Cilium always admits
   traffic from the node a pod runs on (the kubelet's probes need it), so any
   process or host-network pod on that node gets past the pod's policy. Every
