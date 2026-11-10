@@ -15,6 +15,11 @@ data:
       service: http://jenkins.jenkins.svc.cluster.local:8080
     - hostname: jenkins-hook.bariss.dev
       service: http_status:404
+    - hostname: umami.bariss.dev
+      path: ^/(p|api/e)$
+      service: http://traefik.traefik.svc.cluster.local:80
+    - hostname: umami.bariss.dev
+      service: http_status:404
     - hostname: bariss.dev
       service: http://traefik.traefik.svc.cluster.local:80
     # cloudflared matches wildcards by suffix, so "*.bariss.dev" below would

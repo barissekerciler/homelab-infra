@@ -30,7 +30,7 @@ spec:
                   key: APP_SECRET
             # Block lists know script.js and /api/send.
             - name: TRACKER_SCRIPT_NAME
-              value: p.js
+              value: p
             - name: COLLECT_API_ENDPOINT
               value: /api/e
             # Visits come through the Cloudflare tunnel.

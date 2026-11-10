@@ -93,8 +93,9 @@ of them.
 - `descheduler` (`infrastructure/descheduler`): an hourly CronJob that moves
   pods back to a node that returns nearly empty after a drain or reboot; it
   reads requests, as the scheduler does, and moves a pod at most once a day
-- `umami` (`apps/production/umami`): web analytics for the blog; dashboard
-  behind the GitHub sign-in, tracker on the blog's own host
+- `umami` (`apps/production/umami`): web analytics for the blog (Cloudflare
+  Pages); dashboard behind the GitHub sign-in, tracker proxied from the blog's
+  own host by a Pages Function to `umami.bariss.dev`
 - `reloader`, `metrics-server`, `intel-gpu-plugin`, `adguardhome`, `tuppr`
 
 ## Commands

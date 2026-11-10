@@ -211,8 +211,9 @@ Every Service is ClusterIP: no NodePorts, LoadBalancers or externalIPs
 - **The Cloudflare tunnel** (`infrastructure/cloudflared`) for the public
   hosts. It connects outward, so the router forwards no ports, and it answers
   404 for every `*.home.bariss.dev` name: a LAN-only host is never served to
-  the internet, even when someone knows its name. Umami's tracker answers
-  there on two paths of `blog.bariss.dev` ([Umami](../apps/production/umami/README.md)).
+  the internet, even when someone knows its name. `umami.bariss.dev` answers
+  only Umami's two tracker paths, for the blog's Pages Function
+  ([Umami](../apps/production/umami/README.md)).
 
 Inside the cluster, an app without a login of its own admits only its
 clients: gluetun's proxy only Traefik and the namespaces that browse through
