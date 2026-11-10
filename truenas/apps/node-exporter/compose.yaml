@@ -1,7 +1,3 @@
-# Prometheus node-exporter on the NAS for the cluster's Prometheus
-# (infrastructure/monitoring/scrape/truenas.yaml): CPU, memory, temperatures
-# (coretemp, drivetemp for the SATA disks, NVMe), disk I/O, network, ZFS pool
-# state and the pools' free space. TrueNAS Apps owns the workload; see README.md.
 services:
   node-exporter:
     image: quay.io/prometheus/node-exporter:v1.12.1

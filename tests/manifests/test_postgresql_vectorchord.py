@@ -32,7 +32,7 @@ def version(text):
 def test_image_is_pinned_and_in_immich_supported_ranges():
     match = IMAGE.match(cluster()["imageName"])
     assert match, cluster()["imageName"]
-    # The databases were moved from PostgreSQL 17; a major upgrade is its own step.
+    # A major PostgreSQL upgrade is its own step.
     assert match["pg"] == "17"
     assert (0, 3) <= version(match["vchord"]) < (2, 0)
 

@@ -50,7 +50,7 @@ def test_immich_keeps_the_truenas_user():
     for part in ("server", "machine-learning"):
         context = values[part]["defaultPodOptions"]["securityContext"]
         assert (context["runAsUser"], context["runAsGroup"]) == (568, 568)
-    # Both nodes mount NFS; the server prefers homelab but is not pinned there.
+    # Both nodes mount NFS.
     assert "nodeSelector" not in values["server"]["defaultPodOptions"]
 
 
@@ -76,8 +76,8 @@ def test_immich_server_is_replaced_not_surged():
 
 
 def test_immich_machine_learning_is_replaced_not_surged():
-    # The model cache is an RWO volume: the v3.3.5 surge pod landed on the other
-    # node and waited on Multi-Attach while the old pod held the volume.
+    # The model cache is an RWO volume: a surge pod on the other node waits on
+    # Multi-Attach while the old pod holds the volume.
     main = immich_values()["machine-learning"]["controllers"]["main"]
     assert main["strategy"] == "Recreate"
     assert "rollingUpdate" not in main

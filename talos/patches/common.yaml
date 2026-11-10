@@ -1,4 +1,3 @@
-# Applies to every node.
 # Talos 1.14 splits the machine config into documents; a v1alpha1 field and the
 # document that replaces it may not both be set.
 machine:
@@ -21,7 +20,6 @@ config:
   # Pairs with the controller-manager's 240 s grace period in
   # controlplane.yaml.
   nodeStatusUpdateFrequency: 60s
-  # Kubelet image GC removes unused images.
   imageGCHighThresholdPercent: 80
   imageGCLowThresholdPercent: 70
 ---

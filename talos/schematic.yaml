@@ -10,5 +10,4 @@ customization:
       # democratic-csi iSCSI volumes on TrueNAS.
       - siderolabs/iscsi-tools
       - siderolabs/util-linux-tools
-      # Each node joins the tailnet.
       - siderolabs/tailscale
