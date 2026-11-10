@@ -13,6 +13,7 @@ resources:
   - monitoring
   - metrics-server
   - vpa
+  - descheduler
   - goldilocks
   - external-secrets/store
   - cert-manager/acme-account

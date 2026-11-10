@@ -119,6 +119,9 @@ found something those explanations miss:
   (Telegram) in Git
 - `vpa` + `goldilocks`: every Namespace gets VPA mode `Initial`
   (`infrastructure/goldilocks/namespace-defaults`); requests in Git are starting values
+- `descheduler` (`infrastructure/descheduler`): an hourly CronJob that moves
+  pods back to a node that returns nearly empty after a drain or reboot; it
+  reads requests, as the scheduler does, and moves a pod at most once a day
 - `reloader`, `metrics-server`, `intel-gpu-plugin`, `adguardhome`, `tuppr`
 
 ## Commands
