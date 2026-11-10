@@ -1,5 +1,4 @@
 # Upstream deployments/gpu_plugin/base/intel-gpu-plugin.yaml at v0.37.1.
-# It hands /dev/dri to pods that request gpu.intel.com/i915.
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

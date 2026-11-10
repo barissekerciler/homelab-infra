@@ -1,7 +1,3 @@
-# The CloudNativePG operator, the official chart. It runs the PostgreSQL
-# cluster in apps/production/postgresql (Cluster, DatabaseRole, Database,
-# ScheduledBackup). The chart installs the postgresql.cnpg.io CRDs; the
-# infrastructure Kustomization health-checks the ones later Kustomizations use.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

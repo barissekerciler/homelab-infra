@@ -1,6 +1,3 @@
-# kustomize-controller applies the tenant's Kustomizations as this
-# ServiceAccount (spec.serviceAccountName in sync.yaml).
-#
 # The tenant is trusted: it creates its own Namespaces and pinned
 # PersistentVolumes, and its databases live in the shared `postgresql`
 # namespace. Narrower rules would have to name those namespaces here, in the

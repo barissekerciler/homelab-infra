@@ -1,6 +1,3 @@
-# Grafana at https://grafana.home.bariss.dev (LAN and Tailscale only) with its
-# own login; the admin login is in the grafana-admin Secret. Grafana Alerting
-# sends the alerts to Telegram (../alerting).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -24,10 +21,6 @@ spec:
   values:
     admin:
       existingSecret: grafana-admin
-    # No volume: the admin login, datasources, dashboards and alerting come
-    # from Git on every start. Logins, anything saved in the UI, silences and
-    # the alerts' state are lost on restart, so an alert firing then sends
-    # once more.
     persistence:
       enabled: false
     # The Telegram contact points read these (../alerting/contact-points.yaml).
@@ -40,7 +33,6 @@ spec:
         secretKeyRef:
           name: grafana-telegram
           key: chat-id
-    # Restart when a Secret it reads changes.
     annotations:
       reloader.stakater.com/auto: "true"
     resources:
@@ -58,8 +50,6 @@ spec:
         limits:
           cpu: 100m
           memory: 128Mi
-      # Datasources and dashboards come from kube-prometheus-stack ConfigMaps
-      # and ../dashboards, alerting from ../alerting.
       datasources:
         enabled: true
       dashboards:

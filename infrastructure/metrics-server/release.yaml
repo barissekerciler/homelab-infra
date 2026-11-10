@@ -1,5 +1,3 @@
-# Talos ships no metrics-server. kubectl top and the HorizontalPodAutoscaler
-# read pod and node usage from it.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

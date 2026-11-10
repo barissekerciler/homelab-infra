@@ -20,10 +20,6 @@ spec:
   upgrade:
     remediation:
       retries: 3
-  # The scheduler places a pod only when it starts. After a drain or a
-  # reboot (tuppr) the pods that moved stay on the other node; this moves
-  # some back once the returned node is nearly empty. It reads requests, as
-  # the scheduler does, so the two agree on where a pod belongs.
   values:
     kind: CronJob
     schedule: "17 * * * *"
@@ -38,7 +34,6 @@ spec:
         cpu: 500m
         memory: 256Mi
     deschedulerPolicy:
-      # At most five evictions an hour, cluster-wide.
       maxNoOfPodsToEvictTotal: 5
       profiles:
         - name: balance
@@ -48,19 +43,14 @@ spec:
                 # Only a pod that fits on another node: it cannot come back
                 # to the node it left.
                 nodeFit: true
-                # A pod moves at most once a day.
                 minPodAge: 24h
-                # Pods with an emptyDir (the chart's default protection) or
-                # a claim stay where they are.
                 podProtections:
                   extraEnabled:
                     - PodsWithPVC
             - name: LowNodeUtilization
               args:
-                # A node is underutilized while both its CPU and memory
-                # requests are below 50%, overutilized above 80% in either.
-                # Evictions stop once the underutilized node reaches 50%, so
-                # the next run finds nothing to do.
+                # Evictions stop once the underutilized node reaches 50%,
+                # so the next run finds nothing to do.
                 thresholds:
                   cpu: 50
                   memory: 50

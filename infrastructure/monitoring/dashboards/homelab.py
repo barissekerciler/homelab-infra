@@ -289,7 +289,6 @@ panels.append({
 })
 y += 4
 
-# ---- Capacity --------------------------------------------------------------
 row("Capacity: used vs reserved", y)
 y += 1
 
@@ -304,7 +303,6 @@ bargauge("Disk (/var)", per_node(("", disk)), 16, y, 8, 6,
          desc="Used space on each node's /var, where Talos keeps images, logs and emptyDirs (/ is read-only).")
 y += 6
 
-# ---- Nodes over time -----------------------------------------------------------
 row("Nodes", y)
 y += 1
 names = ["homelab", "homelab2"]
@@ -332,7 +330,6 @@ timeseries("Load (1m) per core", [
     desc="1-minute load average divided by the core count; above 1 means work is queueing.")
 y += 8
 
-# ---- TrueNAS ---------------------------------------------------------------------
 row("TrueNAS", y)
 y += 1
 nas_desc = "node-exporter on the NAS (truenas/apps/node-exporter)."
@@ -482,7 +479,6 @@ timeseries("SSD cache size", [target(f'node_zfs_arc_l2_asize{{{NAS}}}', "on SSD"
                 " TrueNAS keeps it across reboots (persistent L2ARC).")
 y += 8
 
-# ---- Workloads -----------------------------------------------------------------
 row("Workloads", y)
 y += 1
 # The pods the "Pods in trouble" tile counts, one row per pod (or per waiting container), with why:
@@ -533,7 +529,6 @@ timeseries("Memory by namespace", [target(
     12, y, 12, 9, "bytes", stack=True, legend_calcs=("lastNotNull", "max"))
 y += 9
 
-# ---- GitOps, ingress, storage -------------------------------------------------
 row("Flux, ingress and storage", y)
 y += 1
 table("Flux: not ready", 'flux_resource_info{ready!="True"}', 0, y, 8, 8,

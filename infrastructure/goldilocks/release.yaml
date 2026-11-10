@@ -1,9 +1,3 @@
-# Goldilocks creates a VPA for every Deployment, StatefulSet and DaemonSet
-# (--on-by-default) and shows the recommendations at
-# https://goldilocks.home.bariss.dev (LAN and Tailscale, GitHub sign-in). Every
-# Namespace gets VPA mode Initial from namespace-defaults/ (a kustomize
-# component), so new namespaces and new apps need nothing; a namespace opts out
-# with goldilocks.fairwinds.com/vpa-update-mode: "off" (claude-agents, vpa).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

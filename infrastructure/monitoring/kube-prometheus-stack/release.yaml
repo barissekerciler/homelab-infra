@@ -1,6 +1,3 @@
-# Prometheus, its operator, kube-state-metrics and node-exporter. Grafana runs
-# as its own release (../grafana); this chart only ships its datasource and
-# dashboards as ConfigMaps for Grafana's sidecars.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -34,8 +31,6 @@ spec:
         # reserved share per node instead.
         KubeCPUOvercommit: true
         KubeMemoryOvercommit: true
-    # Grafana Alerting sends the notifications, these rules' alerts included:
-    # one Grafana rule forwards Prometheus' ALERTS series (../alerting).
     alertmanager:
       enabled: false
     grafana:
@@ -110,8 +105,6 @@ spec:
       # config-reloader loads those without a restart, so Reloader skips it.
       annotations:
         reloader.stakater.com/auto: "false"
-      # Flux readiness (flux-operator), Traefik requests and cert-manager
-      # certificate expiry for the Homelab dashboard.
       additionalPodMonitors:
         - name: flux-operator
           namespaceSelector:
@@ -174,10 +167,9 @@ spec:
           cpu: 100m
           memory: 128Mi
     prometheus-node-exporter:
-      # node-exporter runs on the host network, so its 9100 answered anyone on
-      # the LAN. It now listens on 127.0.0.1; kube-rbac-proxy holds 9100 with
-      # TLS and admits only tokens allowed to get the service's subresource
-      # (node-exporter-rbac.yaml grants Prometheus that).
+      # node-exporter runs on the host network: it listens on 127.0.0.1, and
+      # kube-rbac-proxy holds 9100 with TLS and admits only tokens allowed to get
+      # the service's subresource (node-exporter-rbac.yaml grants Prometheus that).
       kubeRBACProxy:
         enabled: true
         resources:
