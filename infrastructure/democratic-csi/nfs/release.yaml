@@ -15,7 +15,6 @@ spec:
       version: 0.15.1
   interval: 1h0m0s
   values:
-    # Driver credentials come from the SOPS Secret in driver-config-secret.yaml.
     controller:
       # sha256 of the driver config. The controller reads it only at startup,
       # so change this value with the config to roll the controller. New

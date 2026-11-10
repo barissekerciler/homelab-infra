@@ -1,7 +1,5 @@
-# GitHub sign-in for *.home.bariss.dev routes. Traefik forwardAuth sends each
-# request to this proxy's "/" (static 202 when signed in, a GitHub redirect
-# otherwise); the protected host routes /oauth2/ here for the callback.
-# Each protected host needs its callback URL on the GitHub App.
+# Each protected host routes /oauth2/ here and needs its callback URL on the
+# GitHub App.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

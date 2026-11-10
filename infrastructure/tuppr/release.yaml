@@ -1,8 +1,3 @@
-# tuppr upgrades Talos and Kubernetes from the TalosUpgrade and
-# KubernetesUpgrade in upgrades/ (applied by infrastructure-configs, after this
-# chart's CRDs exist). It drives each upgrade from the other node, one node at
-# a time, health-gated. Its pods reach the Talos API through the
-# kubernetesTalosAPIAccess role in talos/patches/controlplane.yaml.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

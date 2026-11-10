@@ -1,4 +1,3 @@
-# Fork of Redlib; its latest tag is followed by digest (policies/redlib.yaml).
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
@@ -8,8 +7,6 @@ spec:
   image: ghcr.io/nachtalb/redlib
   interval: 1h
 ---
-# Talos and Kubernetes releases for tuppr (infrastructure/tuppr/upgrades).
-# Public images; scanned twice a day.
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:

@@ -1,9 +1,5 @@
-# Cilium is the cluster's CNI: the pod network (VXLAN between the nodes), the
-# NetworkPolicies, and Services, hostPorts and NodePorts in eBPF instead of
-# kube-proxy. Talos deploys no CNI and no kube-proxy
-# (talos/patches/controlplane.yaml). Removing this HelmRelease from Git leaves
-# Cilium running (prune disabled): uninstalling the CNI would cut every pod
-# off.
+# Removing this HelmRelease from Git leaves Cilium running (prune disabled):
+# uninstalling the CNI would cut every pod off.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -27,8 +23,6 @@ spec:
     # ranges from Kubernetes, the API through KubePrism, no module loading and
     # no cgroup mount of its own.
     ipam:
-      # Each node's pod range comes from Kubernetes, out of podSubnets in
-      # talos/patches/common.yaml (10.42.0.0/16).
       mode: kubernetes
     kubeProxyReplacement: true
     # Without kube-proxy nothing serves the kubernetes Service when the agent
@@ -91,15 +85,12 @@ spec:
       - nodes
     # Only Kubernetes NetworkPolicies (L3/L4) here: no Envoy DaemonSet.
     l7Proxy: false
-    # Hubble in the agents only: `hubble observe` in a cilium pod shows flows
-    # and policy verdicts (talos/README.md). No relay, no UI.
     hubble:
       enabled: true
       relay:
         enabled: false
       ui:
         enabled: false
-    # A values change restarts the agents and the operator, so it takes effect.
     rollOutCiliumPods: true
     # kube-system has no VPA (infrastructure/goldilocks): these are estimates;
     # check them against usage after a few days. No memory limit on the agent:

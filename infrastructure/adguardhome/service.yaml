@@ -4,9 +4,6 @@ metadata:
   name: adguardhome-service
   namespace: adguardhome
 spec:
-  # AdGuard runs on homelab's host network and answers there itself; this
-  # Service only backs the UI's Ingress. A NodePort would add DNS and the
-  # plain-HTTP UI on random ports of every node address.
   type: ClusterIP
   selector:
     app: adguardhome

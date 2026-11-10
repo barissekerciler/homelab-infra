@@ -1,6 +1,3 @@
-# Flux Web UI at https://flux.home.bariss.dev (LAN and Tailscale only).
-# Flux itself stays on clusters/homelab/flux-system; there is no FluxInstance,
-# so the operator only serves the UI and its reports.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

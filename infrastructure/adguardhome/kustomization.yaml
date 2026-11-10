@@ -8,9 +8,6 @@ resources:
   - ingress.yaml
   - adguardhome-config-secret.yaml
 
-# AdGuardHome.yaml without its secrets. The ExternalSecret adguardhome-config
-# renders it with the admin password hash into the Secret the pod copies at
-# start; Reloader restarts AdGuard when that Secret changes.
 configMapGenerator:
   - name: adguardhome-config-template
     files:

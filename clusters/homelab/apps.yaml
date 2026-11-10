@@ -1,6 +1,3 @@
-# What both PostgreSQL clusters share (namespace, role password store,
-# superuser, metrics, roles in both clusters). Applied once, here; prod's main
-# cluster and dev's pantry build on it.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

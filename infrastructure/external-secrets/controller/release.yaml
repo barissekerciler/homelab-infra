@@ -1,7 +1,3 @@
-# External Secrets Operator, the official chart. It turns ExternalSecrets into
-# Secrets from OpenBao (ClusterSecretStore "openbao", ../store). Its own Flux
-# Kustomization (clusters/homelab/external-secrets.yaml) installs it before
-# cert-issuers and infrastructure, so their ExternalSecrets find the CRDs.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

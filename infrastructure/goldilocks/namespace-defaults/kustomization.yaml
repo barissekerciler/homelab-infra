@@ -1,9 +1,5 @@
-# Every Namespace gets VPA mode Initial unless it says "off" itself, so a new
-# namespace needs nothing. Each top-level kustomization that creates Namespaces
-# (infrastructure, infrastructure/cert-manager/controller, infrastructure/democratic-csi,
-# apps/base/postgresql, apps/production, apps/dev) lists this component.
-# Initial: a pod's requests come from its own usage when it starts; VPA only
-# touches requests (RequestsOnly), never limits, with a 10m/32Mi floor.
+# Every kustomization that creates Namespaces lists this component, so a new
+# namespace gets VPA mode Initial unless it says "off" itself.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 patches:

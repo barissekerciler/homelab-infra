@@ -1,6 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# Helm chart repositories, one per vendor; every one is used by a HelmRelease.
 resources:
   - autoscaler.yaml
   - cilium.yaml
