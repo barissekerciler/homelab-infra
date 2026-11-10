@@ -220,8 +220,6 @@ def test_the_browser_screen_sits_behind_the_github_sign_in():
     assert backend == {"name": "claude-browser", "port": {"number": 6080}}
     auth = agents_one("Middleware", "claude-browser-auth")["spec"]["forwardAuth"]
     assert auth["address"] == oauth2_proxy_url()
-    release = yaml.safe_load((ROOT / "infrastructure/oauth2-proxy/home-bariss-dev/release.yaml").read_text(encoding="utf-8"))
-    assert host in release["spec"]["values"]["ingress"]["hosts"]
     for client in ("local", "tailscale"):
         assert resolve(host, client) == CLUSTER[client], client
 

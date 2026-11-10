@@ -36,5 +36,3 @@ somewhere without the box's Claude, GitHub and cluster tokens.
 - Only the box reaches 8931. noVNC on 6080 is reachable only from Traefik:
   https://agent-browser.home.bariss.dev/vnc.html (LAN and Tailscale), behind
   the GitHub sign-in. Use it to watch or to sign in to sites by hand.
-- The GitHub App behind oauth2-proxy needs the callback
-  `https://agent-browser.home.bariss.dev/oauth2/callback`.

@@ -1,5 +1,6 @@
-# Each protected host routes /oauth2/ here and needs its callback URL on the
-# GitHub App.
+# One sign-in host for every *.home route: GitHub sends everyone back to
+# auth.home.bariss.dev, the GitHub App's only callback URL; the cookie covers
+# .home.bariss.dev and oauth2-proxy then returns to the host they came from.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -32,6 +33,7 @@ spec:
         reverse_proxy = true
         set_xauthrequest = true
         skip_provider_button = true
+        redirect_url = "https://auth.home.bariss.dev/oauth2/callback"
         whitelist_domains = [ ".home.bariss.dev" ]
         cookie_domains = [ ".home.bariss.dev" ]
         cookie_expire = "24h0m0s"
@@ -46,11 +48,7 @@ spec:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:
-        - cam.home.bariss.dev
-        - agent-browser.home.bariss.dev
-        - goldilocks.home.bariss.dev
-        - openbao.home.bariss.dev
-        - umami.home.bariss.dev
+        - auth.home.bariss.dev
     resources:
       requests:
         cpu: 5m

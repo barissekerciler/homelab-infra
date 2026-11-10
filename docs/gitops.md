@@ -238,14 +238,16 @@ listed in `infrastructure/adguardhome/adguardhome-config.yaml`
 Admin UIs without a login of their own sit behind the oauth2-proxy in
 `infrastructure/oauth2-proxy/home-bariss-dev/`: a Traefik forwardAuth
 middleware on their route sends every request to it. Only the GitHub account
-`barissekerciler` may sign in. The sign-in uses a GitHub App with:
+`barissekerciler` may sign in. Every route signs in through one host,
+`auth.home.bariss.dev`, as in oauth2-proxy's
+[Traefik integration](https://oauth2-proxy.github.io/oauth2-proxy/configuration/integrations/traefik):
+GitHub returns there (`redirect_url`), the session cookie covers
+`.home.bariss.dev` (`cookie_domains`) and oauth2-proxy sends the browser back
+to the host it came from (`whitelist_domains`). The sign-in uses a GitHub App
+with:
 
-- Callback URLs `https://cam.home.bariss.dev/oauth2/callback` (Frigate, `apps/production/frigate`),
-  `https://agent-browser.home.bariss.dev/oauth2/callback` (the Claude box's
-  browser, `apps/production/claude-agents`),
-  `https://goldilocks.home.bariss.dev/oauth2/callback` (`infrastructure/goldilocks`),
-  `https://openbao.home.bariss.dev/oauth2/callback` (`apps/production/openbao`) and
-  `https://umami.home.bariss.dev/oauth2/callback` (Umami, `apps/production/umami`)
+- One callback URL, `https://auth.home.bariss.dev/oauth2/callback`, wildcard
+  matching off
 - Webhook off, account permission "Email addresses: Read-only", no install needed
 
 Its client ID and secret live in `oauth2-proxy-secret` in that directory:
@@ -254,10 +256,9 @@ Its client ID and secret live in `oauth2-proxy-secret` in that directory:
 bao kv patch secret/oauth2-proxy-home-bariss-dev/oauth2-proxy-secret client-id=<client id> client-secret=<client secret>
 ```
 
-To protect another `*.home.bariss.dev` host, add it to that release's
-`ingress.hosts`, add its `/oauth2/callback` URL to the GitHub App and put a
-forwardAuth middleware like `goldilocks-auth` (`infrastructure/goldilocks/web-auth/`)
-on its route. The session cookie covers `.home.bariss.dev`.
+To protect another `*.home.bariss.dev` host, put a forwardAuth middleware
+like `goldilocks-auth` (`infrastructure/goldilocks/web-auth/`) on its route;
+neither the release nor the GitHub App changes.
 
 ## Secrets
 

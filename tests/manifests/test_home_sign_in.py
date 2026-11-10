@@ -55,14 +55,18 @@ class HomeSignInManifestTest(unittest.TestCase):
         self.assertEqual(config["upstreams"], '[ "static://202" ]')
         self.assertEqual(config["reverse_proxy"], "true")
 
-    def test_sign_in_callback_is_served_on_every_protected_host(self):
+    def test_every_route_signs_in_through_the_one_auth_host(self):
         release = resource(
             self.infrastructure, "HelmRelease", "oauth2-proxy", oauth2_proxy_namespace()
         )
+        # The GitHub App's only callback URL; a new protected host changes nothing here.
+        config = config_lines(release)
+        self.assertEqual(config["redirect_url"], f'"https://{home("auth")}/oauth2/callback"')
+        self.assertEqual(config["cookie_domains"], '[ ".home.bariss.dev" ]')
+        self.assertEqual(config["whitelist_domains"], '[ ".home.bariss.dev" ]')
         ingress = release["spec"]["values"]["ingress"]
         self.assertEqual(ingress["path"], "/oauth2/")
-        self.assertEqual(ingress["hosts"], [home(name) for name in (
-            "cam", "agent-browser", "goldilocks", "openbao", "umami")])
+        self.assertEqual(ingress["hosts"], [home("auth")])
         self.assertEqual(
             ingress["annotations"]["traefik.ingress.kubernetes.io/router.entrypoints"], "websecure"
         )
