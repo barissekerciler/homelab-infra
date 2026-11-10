@@ -267,7 +267,7 @@ spec:
               mountPath: /app/media
           resources:
             requests:
-              cpu: 150m
+              cpu: 50m
               memory: 768Mi
             limits:
               cpu: "1"
