@@ -14,3 +14,5 @@ resources:
   - vikunja-db-secret.yaml
   - dispatcharr.yaml
   - dispatcharr-db-secret.yaml
+  - umami.yaml
+  - umami-db-secret.yaml

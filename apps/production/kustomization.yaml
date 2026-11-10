@@ -12,6 +12,7 @@ resources:
   - nextcloud
   - frigate
   - vikunja
+  - umami
   - claude-code
   - claude-agents
   - openbao

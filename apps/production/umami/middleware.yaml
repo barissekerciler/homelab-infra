@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: umami-auth
+spec:
+  forwardAuth:
+    address: http://oauth2-proxy.oauth2-proxy-home-bariss-dev.svc.cluster.local/
+    authResponseHeaders:
+      - X-Auth-Request-User
+      - X-Auth-Request-Email
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: umami-script
+spec:
+  replacePath:
+    path: /script.js
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: umami-collect
+spec:
+  replacePath:
+    path: /api/send

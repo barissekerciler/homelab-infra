@@ -30,7 +30,7 @@ Cloudflare tunnel, and the rest is reachable on the LAN and over Tailscale only.
 | Databases | CloudNativePG: a backed-up main cluster and an expendable "pantry" cluster |
 | Observability | kube-prometheus-stack, Grafana (dashboards and alerts to Telegram in Git), VPA + Goldilocks |
 | Auth | oauth2-proxy with GitHub sign-in in front of admin UIs |
-| Apps | Immich, Nextcloud, Jellyfin and the *arr stack, Frigate, Stalwart + Roundcube, Vikunja, Redlib, Jenkins, a Claude Code box |
+| Apps | Immich, Nextcloud, Jellyfin and the *arr stack, Frigate, Stalwart + Roundcube, Vikunja, Redlib, Umami (web analytics), Jenkins, a Claude Code box |
 
 ## Repository layout
 
