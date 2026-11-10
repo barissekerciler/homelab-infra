@@ -1,0 +1,14 @@
+# Full x.y.z tags only: "3.4" and "latest" move.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: umami
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: umami
+  filterTags:
+    pattern: '^\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: "^3.4.1"

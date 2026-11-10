@@ -211,7 +211,8 @@ Every Service is ClusterIP: no NodePorts, LoadBalancers or externalIPs
 - **The Cloudflare tunnel** (`infrastructure/cloudflared`) for the public
   hosts. It connects outward, so the router forwards no ports, and it answers
   404 for every `*.home.bariss.dev` name: a LAN-only host is never served to
-  the internet, even when someone knows its name.
+  the internet, even when someone knows its name. Umami's tracker answers
+  there on two paths of `blog.bariss.dev` ([Umami](../apps/production/umami/README.md)).
 
 Inside the cluster, an app without a login of its own admits only its
 clients: the Flux UI only Traefik, gluetun's proxy only Traefik and the
@@ -245,8 +246,9 @@ sign-in uses a GitHub App with:
   `https://cam.home.bariss.dev/oauth2/callback` (Frigate, `apps/production/frigate`),
   `https://agent-browser.home.bariss.dev/oauth2/callback` (the Claude box's
   browser, `apps/production/claude-agents`),
-  `https://goldilocks.home.bariss.dev/oauth2/callback` (`infrastructure/goldilocks`) and
-  `https://openbao.home.bariss.dev/oauth2/callback` (`apps/production/openbao`)
+  `https://goldilocks.home.bariss.dev/oauth2/callback` (`infrastructure/goldilocks`),
+  `https://openbao.home.bariss.dev/oauth2/callback` (`apps/production/openbao`) and
+  `https://analytics.home.bariss.dev/oauth2/callback` (Umami, `apps/production/umami`)
 - Webhook off, account permission "Email addresses: Read-only", no install needed
 
 Its client ID and secret live in `oauth2-proxy-secret` in that directory:
@@ -281,8 +283,17 @@ flowchart LR
   git["ExternalSecret in Git<br/>key names, no values"] --> eso["External Secrets Operator"]
   bao -- "ClusterSecretStore openbao<br/>every 10 minutes" --> eso
   eso --> secret["Kubernetes Secret"] --> pod["Pod"]
-  eso -. "PushSecret:<br/>generated database passwords" .-> bao
+  eso -. "PushSecret:<br/>generated passwords" .-> bao
 ```
+
+Generated values need no `bao kv put`: a PushSecret writes a fresh one into
+OpenBao once, if the key does not exist yet, and ExternalSecrets read it back
+like any other. PostgreSQL role passwords go to `secret/postgresql/` through
+the OpenBao role `postgresql-passwords`
+([PostgreSQL](../apps/production/postgresql/README.md)); an app's own secrets
+go to `secret/<its namespace>/` through the role `app-secrets`, which writes
+only below the namespace that signs in (`apps/production/umami`,
+[OpenBao](../apps/production/openbao/README.md)).
 
 A config file with a secret in it is a ConfigMap template that an ExternalSecret
 renders into a Secret (`infrastructure/adguardhome`). Values that are not
@@ -378,10 +389,11 @@ delete them.
 `infrastructure/image-update-automation/` contains:
 
 - `sources.yaml`: Redlib's fork (`ghcr.io/nachtalb/redlib`), scanned hourly, and
-  the Talos and kubelet images, scanned twice a day
+  Umami and the Talos and kubelet images, scanned twice a day
 - `policies/`: `redlib` follows `latest` and reflects its digest, because the
   fork's `sha-<commit>` tags do not sort by age, so `apps/production/redlib`
-  pins `latest@sha256:...`; `talos` and `kubelet` pick the newest patch release
+  pins `latest@sha256:...`; `umami` picks the newest 3.x release for
+  `apps/production/umami`; `talos` and `kubelet` pick the newest patch release
 - `image-update-automation.yaml`: writes `$imagepolicy` markers under `apps/`
   and pushes to `main`
 - `tuppr-update-automation.yaml`: writes the `talos` and `kubelet` policies' newest

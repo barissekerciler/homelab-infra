@@ -8,7 +8,7 @@ cluster, never single databases, so the split is the backup policy:
 
 | Cluster | Directory | Holds | Backups |
 | --- | --- | --- | --- |
-| `postgres` (main) | `apps/production/postgresql` | data that matters: Immich, Nextcloud, Stalwart, Roundcube, Vikunja, Dispatcharr, anything important added later | WAL archive + nightly base backup, 14 days, copied to Hetzner |
+| `postgres` (main) | `apps/production/postgresql` | data that matters: Immich, Nextcloud, Stalwart, Roundcube, Vikunja, Dispatcharr, Umami, anything important added later | WAL archive + nightly base backup, 14 days, copied to Hetzner |
 | `postgres-pantry` | `apps/dev/postgresql` | handy but expendable: test and scratch databases | none |
 
 A new database goes into the main cluster unless losing it would not matter.

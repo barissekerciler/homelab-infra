@@ -74,7 +74,7 @@ class FluxWebAuthManifestTest(unittest.TestCase):
         ingress = release["spec"]["values"]["ingress"]
         self.assertEqual(ingress["path"], "/oauth2/")
         self.assertEqual(ingress["hosts"], [home(name) for name in (
-            "flux", "cam", "agent-browser", "goldilocks", "openbao")])
+            "flux", "cam", "agent-browser", "goldilocks", "openbao", "analytics")])
         self.assertEqual(
             ingress["annotations"]["traefik.ingress.kubernetes.io/router.entrypoints"], "websecure"
         )

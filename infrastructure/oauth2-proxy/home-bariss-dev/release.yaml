@@ -51,6 +51,7 @@ spec:
         - agent-browser.home.bariss.dev
         - goldilocks.home.bariss.dev
         - openbao.home.bariss.dev
+        - analytics.home.bariss.dev
     resources:
       requests:
         cpu: 5m
