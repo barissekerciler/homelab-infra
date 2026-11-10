@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: sonarr-stalled-requeue
   labels:
-    app: sonarr
+    app: sonarr-stalled-requeue
     component: stalled-requeue
 spec:
   schedule: "*/5 * * * *"
@@ -18,7 +18,7 @@ spec:
       template:
         metadata:
           labels:
-            app: sonarr
+            app: sonarr-stalled-requeue
             component: stalled-requeue
         spec:
           restartPolicy: Never

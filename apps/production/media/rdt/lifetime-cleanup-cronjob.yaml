@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: rdt-lifetime-cleanup
   labels:
-    app: rdt
+    app: rdt-lifetime-cleanup
     component: lifetime-cleanup
 spec:
   schedule: "*/15 * * * *"
@@ -18,7 +18,7 @@ spec:
       template:
         metadata:
           labels:
-            app: rdt
+            app: rdt-lifetime-cleanup
             component: lifetime-cleanup
         spec:
           restartPolicy: Never

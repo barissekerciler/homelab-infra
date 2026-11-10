@@ -30,9 +30,14 @@ spec:
   nfs:
     server: 10.0.0.203
     path: /mnt/pool1/apps/db-dumps
+  # sync: each write reaches the NAS before rclone goes on. Asynchronous NFS
+  # writes pile up as dirty and writeback pages in the job's 512Mi cgroup
+  # faster than the NAS takes them; those pages cannot be reclaimed, so the
+  # kernel killed the copy while rclone itself held about 35 MiB.
   mountOptions:
     - noatime
     - nfsvers=4.1
+    - sync
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
