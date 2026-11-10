@@ -26,6 +26,25 @@ The Function forwards the visitor's address as `X-Real-IP`. Cloudflare turns
 that into `CF-Connecting-IP` for a request to the same zone, and Umami reads
 it (`CLIENT_IP_HEADER`) for the country; Umami does not store addresses.
 
+## A page view
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant P as Cloudflare Pages<br/>blog.bariss.dev
+  participant T as Cloudflare tunnel<br/>umami.bariss.dev
+  participant U as Umami<br/>(Traefik, then the pod)
+  B->>P: GET /p
+  P->>T: GET /p, X-Real-IP = the visitor (Function)
+  T->>U: GET /p
+  U-->>P: tracker script
+  P-->>B: the script, as blog.bariss.dev/p
+  B->>P: POST /api/e (the page view)
+  P->>T: POST /api/e (Function)
+  T->>U: POST /api/e
+  Note over U: country from CF-Connecting-IP,<br/>page view into PostgreSQL
+```
+
 ## First sign-in
 
 Umami creates the user `admin` with the password `umami`. Sign in once,
