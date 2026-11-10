@@ -6,26 +6,12 @@ storage on the pinned iSCSI volume `data-openbao-0`, static auto-unseal, UI at
 Secret's values except the bootstrap ones (democratic-csi driver configs, which
 its own volume needs). The External Secrets Operator copies them into the
 cluster (`infrastructure/external-secrets`, role `external-secrets`: read on
-`secret/*`). ESO writes only generated values, once each: PostgreSQL role
-passwords through the role `postgresql-passwords` (create and read on
-`secret/postgresql/*`, `apps/base/postgresql/passwords.yaml`), and apps' own
-secrets through the role `app-secrets` (below).
-
-## Generated app secrets
-
-An app whose secrets nobody needs to type (Umami's `APP_SECRET` and admin
-password, `apps/production/umami/generated-secrets.yaml`) has a ServiceAccount
-`openbao-app-secrets`, a SecretStore of the same name and a PushSecret per
-value. The role `app-secrets` admits that ServiceAccount from the namespaces
-it lists, and its policy may create and read only
-`secret/<the signed-in namespace>/*`. Another app needs its namespace added
-to the role, with the root token; `bao write` replaces the whole role, so
-repeat every namespace:
-
-```sh
-bao write auth/kubernetes/role/app-secrets bound_service_account_names=openbao-app-secrets \
-  bound_service_account_namespaces=umami,<new namespace> token_policies=app-secrets token_ttl=1h token_max_ttl=2h
-```
+`secret/*`). ESO writes only generated values, once each, through a role per
+writer: `postgresql-passwords` (create and read on `secret/postgresql/*`,
+`apps/base/postgresql/passwords.yaml`) and `umami-secrets` (`secret/umami/*`,
+Umami's `APP_SECRET`, `apps/production/umami/generated-secrets.yaml`). Another
+app's generated secrets get their own policy and role like these, written
+with the root token (bootstrap below).
 
 ## Adding or changing a secret
 
@@ -94,19 +80,16 @@ path "secret/metadata/postgresql/*" {
 EOF
 bao write auth/kubernetes/role/postgresql-passwords bound_service_account_names=postgresql-passwords \
   bound_service_account_namespaces=postgresql token_policies=postgresql-passwords token_ttl=1h token_max_ttl=2h
-# The policy names the signed-in ServiceAccount's namespace through the
-# kubernetes mount's accessor.
-ns="identity.entity.aliases.$(bao read -field=accessor sys/auth/kubernetes).metadata.service_account_namespace"
-bao policy write app-secrets - <<EOF
-path "secret/data/{{$ns}}/*" {
+bao policy write umami-secrets - <<'EOF'
+path "secret/data/umami/*" {
   capabilities = ["create", "read", "update"]
 }
-path "secret/metadata/{{$ns}}/*" {
+path "secret/metadata/umami/*" {
   capabilities = ["create", "read", "update", "list"]
 }
 EOF
-bao write auth/kubernetes/role/app-secrets bound_service_account_names=openbao-app-secrets \
-  bound_service_account_namespaces=umami token_policies=app-secrets token_ttl=1h token_max_ttl=2h
+bao write auth/kubernetes/role/umami-secrets bound_service_account_names=umami-secrets \
+  bound_service_account_namespaces=umami token_policies=umami-secrets token_ttl=1h token_max_ttl=2h
 ```
 
 ## CLI

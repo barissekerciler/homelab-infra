@@ -28,8 +28,9 @@ spec:
                 secretKeyRef:
                   name: umami-app
                   key: APP_SECRET
-            # Block lists know /api/send. Umami rewrites its script to post
-            # here at start; tracker-route.yaml maps it back.
+            # Block lists know script.js and /api/send.
+            - name: TRACKER_SCRIPT_NAME
+              value: p.js
             - name: COLLECT_API_ENDPOINT
               value: /api/e
             # Visits come through the Cloudflare tunnel.

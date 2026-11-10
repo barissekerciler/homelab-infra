@@ -290,10 +290,9 @@ Generated values need no `bao kv put`: a PushSecret writes a fresh one into
 OpenBao once, if the key does not exist yet, and ExternalSecrets read it back
 like any other. PostgreSQL role passwords go to `secret/postgresql/` through
 the OpenBao role `postgresql-passwords`
-([PostgreSQL](../apps/production/postgresql/README.md)); an app's own secrets
-go to `secret/<its namespace>/` through the role `app-secrets`, which writes
-only below the namespace that signs in (`apps/production/umami`,
-[OpenBao](../apps/production/openbao/README.md)).
+([PostgreSQL](../apps/production/postgresql/README.md)); an app's own, like
+Umami's `APP_SECRET`, go to `secret/<its namespace>/` through a role of its
+own ([OpenBao](../apps/production/openbao/README.md)).
 
 A config file with a secret in it is a ConfigMap template that an ExternalSecret
 renders into a Secret (`infrastructure/adguardhome`). Values that are not

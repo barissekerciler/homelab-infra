@@ -9,24 +9,29 @@ database at start.
 ## Where it answers
 
 - **Dashboard**: `https://analytics.home.bariss.dev` (LAN and Tailscale),
-  behind the GitHub sign-in (`middleware.yaml`), then Umami's own sign-in as
-  `admin`.
+  behind the GitHub sign-in (`middleware.yaml`), then Umami's own sign-in.
 - **Tracker**: two paths on the blog's own host, through the Cloudflare tunnel
-  (`tracker-route.yaml`): `/p.js` (Umami's `/script.js`) and `/api/e` (the
-  tracker posts there; Traefik maps it to `/api/send`). A blocker that stops
-  them stops the blog, and the paths avoid the names block lists know
-  (`umami`, `script.js`, `/api/send`). Nothing else of Umami is public.
-  These routes take the fixed priority 200; a route for the blog itself on
+  (`tracker-route.yaml`), renamed with Umami's own settings
+  ([bypass ad blockers](https://umami.is/docs/bypass-ad-blockers)):
+  `/p.js` (`TRACKER_SCRIPT_NAME`) and `/api/e` (`COLLECT_API_ENDPOINT`). A
+  blocker that stops them stops the blog. Nothing else of Umami is public.
+  The route takes the fixed priority 200; a route for the blog itself on
   `blog.bariss.dev` takes 100, so the order never depends on the rules'
   length.
-- The NetworkPolicy admits only Traefik and the admin password Job.
+- The NetworkPolicy admits only Traefik.
 
 The country comes from `CF-Connecting-IP`, the visitor's address that
 Cloudflare sets (`CLIENT_IP_HEADER`); Umami does not store addresses.
 
+## First sign-in
+
+Umami creates the user `admin` with the password `umami`. Sign in once,
+then Settings, Profile, Change password, and keep the new one in Bitwarden.
+The database holds it, so a restore keeps it.
+
 ## Adding a site
 
-Sign in, Settings, Websites, Add website; then, in the site's HTML head:
+Settings, Websites, Add website; then, in the site's HTML head:
 
 ```html
 <script defer src="/p.js" data-website-id="<website id>"></script>
@@ -37,17 +42,9 @@ The script takes the host from its own URL, so it posts to the blog's
 
 ## Secrets
 
-All generated, nothing typed (`generated-secrets.yaml`): PushSecrets write a
-fresh value into OpenBao once, through the role `app-secrets`
-([OpenBao](../openbao/README.md#generated-app-secrets)).
-
-| OpenBao key | Secret | Used for |
+| OpenBao key | Secret | Written by |
 | --- | --- | --- |
-| `secret/postgresql/umami-db` | `umami-db` (`DATABASE_URL`) | role `umami` |
-| `secret/umami/umami-app` | `umami-app` (`APP_SECRET`) | sign-in tokens, visitor hashes |
-| `secret/umami/umami-admin` | `umami-admin` (`password`) | the dashboard user `admin` |
+| `secret/postgresql/umami-db` | `umami-db` (`DATABASE_URL`) | PushSecret `umami-db` ([PostgreSQL](../postgresql/README.md)) |
+| `secret/umami/umami-app` | `umami-app` (`APP_SECRET`) | PushSecret `umami-app` (`generated-secrets.yaml`), through the OpenBao role `umami-secrets` |
 
-Umami's first migration creates `admin` with the password `umami`. The Job
-`umami-admin-password` signs in with it once and sets the generated one; when
-`admin` no longer signs in with `umami`, it does nothing. Copy the admin
-password from OpenBao (`secret/umami/umami-admin`) to Bitwarden.
+Both are generated once and never typed.
