@@ -16,8 +16,6 @@ WORKLOAD_KINDS = {"Deployment", "StatefulSet", "Job", "CronJob"}
 ALLOWED = {
     "adguard/adguardhome": "homelab",
 }
-PREFER_HOMELAB = [{"weight": 100, "preference": {"matchExpressions": [
-    {"key": "kubernetes.io/hostname", "operator": "In", "values": ["homelab"]}]}}]
 
 
 @lru_cache(maxsize=None)
@@ -72,23 +70,20 @@ def test_no_persistent_volume_is_tied_to_a_node():
     ("apps/production/media/jellyfin/release.yaml", []),
     ("apps/production/nextcloud/release.yaml", []),
 ])
-def test_helm_releases_prefer_homelab_without_pinning(release, path):
+def test_helm_releases_name_no_node(release, path):
     values = yaml.safe_load((ROOT / release).read_text())["spec"]["values"]
     for key in path:
         values = values[key]
     assert "nodeSelector" not in values
-    assert pinned_node(values) is None
-    assert values["affinity"]["nodeAffinity"]["preferredDuringSchedulingIgnoredDuringExecution"] == PREFER_HOMELAB
+    assert "nodeAffinity" not in (values.get("affinity") or {})
 
 
-def test_unpinned_workloads_prefer_the_large_node():
+def test_no_workload_prefers_a_node():
+    # The scheduler places them by their requests alone.
     for name, spec in workloads():
-        if name in ALLOWED or name.startswith(("claude-", "flux-system/")):
+        if name in ALLOWED:
             continue
-        preferred = (spec.get("affinity") or {}).get("nodeAffinity", {}).get(
-            "preferredDuringSchedulingIgnoredDuringExecution")
-        if preferred is not None:
-            assert preferred == PREFER_HOMELAB, name
+        assert "nodeAffinity" not in (spec.get("affinity") or {}), name
 
 
 def test_traefik_answers_on_every_node():

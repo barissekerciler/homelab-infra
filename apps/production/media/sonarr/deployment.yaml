@@ -20,17 +20,7 @@ spec:
         app: sonarr
         homelab.bariss.dev/volume-group: sonarr-rdt
     spec:
-      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - homelab
         # sonarr-stalled-requeue mounts sonarr's and rdt's RWO config volumes,
         # so sonarr, rdt and their CronJobs share a node. The first of them
         # to start may pick any node.

@@ -13,16 +13,5 @@ spec:
   instances: 1
   # One instance: a PodDisruptionBudget would block every node drain (tuppr).
   enablePDB: false
-  # homelab2 has 7 GB of RAM.
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          preference:
-            matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                  - homelab
   storage:
     size: 100Gi

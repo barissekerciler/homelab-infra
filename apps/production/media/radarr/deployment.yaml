@@ -19,17 +19,6 @@ spec:
       labels:
         app: radarr
     spec:
-      # Not pinned: homelab2 (7 GB) runs it when homelab is down or full.
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - homelab
       containers:
         - name: radarr
           image: linuxserver/radarr:latest@sha256:51a9ac2a9eb47afc833541e5fd6c11b86eb9f810694c22fa2429e3078e9194b2

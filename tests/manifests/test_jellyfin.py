@@ -35,11 +35,11 @@ def test_plays_dispatcharr_dvr_recordings_read_only():
     assert mounts["/recordings"] == {"name": "dispatcharr-recordings", "mountPath": "/recordings", "readOnly": True}
 
 
-def test_prefers_homelab_quicksync_but_is_not_pinned():
+def test_uses_quicksync_on_either_node():
     v = values()
+    # Both nodes have the same i5-6500 iGPU.
     assert "nodeSelector" not in v
-    preferred = v["affinity"]["nodeAffinity"]["preferredDuringSchedulingIgnoredDuringExecution"]
-    assert preferred[0]["preference"]["matchExpressions"][0]["values"] == ["homelab"]
+    assert "affinity" not in v
     # The Intel device plugin grants the GPU; a hostPath device is blocked by the device cgroup.
     assert v["resources"]["limits"]["gpu.intel.com/i915"] == "1"
     # homelab's render group owns /dev/dri/renderD128.
