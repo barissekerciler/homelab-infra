@@ -13,7 +13,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: analytics.home.bariss.dev
+    - host: umami.home.bariss.dev
       http:
         paths:
           - path: /

@@ -8,7 +8,7 @@ database at start.
 
 ## Where it answers
 
-- **Dashboard**: `https://analytics.home.bariss.dev` (LAN and Tailscale),
+- **Dashboard**: `https://umami.home.bariss.dev` (LAN and Tailscale),
   behind the GitHub sign-in (`middleware.yaml`), then Umami's own sign-in.
 - **Tracker**: the blog runs on Cloudflare Pages. A Pages Function in the
   blog's repository (`functions/`) proxies `blog.bariss.dev/p` and
