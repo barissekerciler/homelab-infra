@@ -469,7 +469,7 @@ everything, by design.
 
 | What fails | What happens | Recovery |
 | --- | --- | --- |
-| `homelab2` | The API keeps working. Its pods move to `homelab` (nothing is pinned to a node); iSCSI volumes follow once Kubernetes gives up on the lost node. | Nothing needed; bring the node back. |
+| `homelab2` | The API keeps working. Its pods move to `homelab` (nothing is pinned to a node); iSCSI volumes follow once Kubernetes gives up on the lost node. | Nothing needed; bring the node back. The descheduler (`infrastructure/descheduler`) moves pods without volumes back while it is nearly empty. |
 | `homelab` | It is the only control plane: pods on `homelab2` keep running, but nothing is scheduled, restarted or applied until it is back. | Repair or reinstall it with `talos/`. |
 | The whole cluster | The volumes, SeaweedFS and the copies are on TrueNAS; at most PostgreSQL's last few minutes are lost. | Install Talos, create the [bootstrap](#bootstrap) Secrets and OpenBao's seal key; Flux rebuilds everything from Git, pinned volumes bind their old disks, and PostgreSQL restores from its Barman Cloud backups. |
 | TrueNAS | All volumes and the on-site backups. | Restore from the Storage Box: PostgreSQL and OpenBao from `db-dumps`, Immich and Nextcloud from their own copies. |

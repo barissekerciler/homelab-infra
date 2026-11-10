@@ -6,6 +6,7 @@ resources:
   - cilium.yaml
   - cloudnative-pg.yaml
   - democratic-csi.yaml
+  - descheduler.yaml
   - external-secrets.yaml
   - fairwinds.yaml
   - flux-operator.yaml

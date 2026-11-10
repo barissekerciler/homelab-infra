@@ -1,0 +1,82 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: descheduler
+spec:
+  releaseName: descheduler
+  chart:
+    spec:
+      chart: descheduler
+      sourceRef:
+        kind: HelmRepository
+        name: descheduler
+        namespace: flux-system
+      version: 0.37.0
+  interval: 1h0m0s
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  # The scheduler places a pod only when it starts. After a drain or a
+  # reboot (tuppr) the pods that moved stay on the other node; this moves
+  # some back once the returned node is nearly empty. It reads requests, as
+  # the scheduler does, so the two agree on where a pod belongs.
+  values:
+    kind: CronJob
+    schedule: "17 * * * *"
+    successfulJobsHistoryLimit: 1
+    failedJobsHistoryLimit: 1
+    ttlSecondsAfterFinished: 3600
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    deschedulerPolicy:
+      # At most five evictions an hour, cluster-wide.
+      maxNoOfPodsToEvictTotal: 5
+      profiles:
+        - name: balance
+          pluginConfig:
+            - name: DefaultEvictor
+              args:
+                # Only a pod that fits on another node: it cannot come back
+                # to the node it left.
+                nodeFit: true
+                # A pod moves at most once a day.
+                minPodAge: 24h
+                # Pods with an emptyDir (the chart's default protection) or
+                # a claim stay where they are.
+                podProtections:
+                  extraEnabled:
+                    - PodsWithPVC
+            - name: LowNodeUtilization
+              args:
+                # A node is underutilized while both its CPU and memory
+                # requests are below 50%, overutilized above 80% in either.
+                # Evictions stop once the underutilized node reaches 50%, so
+                # the next run finds nothing to do.
+                thresholds:
+                  cpu: 50
+                  memory: 50
+                targetThresholds:
+                  cpu: 80
+                  memory: 80
+                evictableNamespaces:
+                  exclude:
+                    - kube-system
+                    - flux-system
+                    - descheduler
+                    - adguard
+                    - claude-agents
+                    - claude-code
+                    - postgresql
+                    - openbao
+          plugins:
+            balance:
+              enabled:
+                - LowNodeUtilization
