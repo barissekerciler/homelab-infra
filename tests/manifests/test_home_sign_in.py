@@ -62,7 +62,7 @@ class HomeSignInManifestTest(unittest.TestCase):
         ingress = release["spec"]["values"]["ingress"]
         self.assertEqual(ingress["path"], "/oauth2/")
         self.assertEqual(ingress["hosts"], [home(name) for name in (
-            "cam", "agent-browser", "goldilocks", "openbao", "analytics")])
+            "cam", "agent-browser", "goldilocks", "openbao", "umami")])
         self.assertEqual(
             ingress["annotations"]["traefik.ingress.kubernetes.io/router.entrypoints"], "websecure"
         )

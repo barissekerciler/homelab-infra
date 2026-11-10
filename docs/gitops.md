@@ -245,7 +245,7 @@ middleware on their route sends every request to it. Only the GitHub account
   browser, `apps/production/claude-agents`),
   `https://goldilocks.home.bariss.dev/oauth2/callback` (`infrastructure/goldilocks`),
   `https://openbao.home.bariss.dev/oauth2/callback` (`apps/production/openbao`) and
-  `https://analytics.home.bariss.dev/oauth2/callback` (Umami, `apps/production/umami`)
+  `https://umami.home.bariss.dev/oauth2/callback` (Umami, `apps/production/umami`)
 - Webhook off, account permission "Email addresses: Read-only", no install needed
 
 Its client ID and secret live in `oauth2-proxy-secret` in that directory:
