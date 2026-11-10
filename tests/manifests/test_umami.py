@@ -37,14 +37,19 @@ def test_only_the_tracker_paths_are_public():
     route = find("IngressRoute", "umami-tracker")
     assert route["spec"]["entryPoints"] == ["web"]
     [item] = route["spec"]["routes"]
-    assert item["match"] == "Host(`blog.bariss.dev`) && (Path(`/p.js`) || Path(`/api/e`))"
-    # Fixed, above the blog's own route (100): never ranked by rule length.
-    assert item["priority"] == 200
+    assert item["match"] == "Host(`umami.bariss.dev`) && (Path(`/p`) || Path(`/api/e`))"
     assert "middlewares" not in item
     env = {row["name"]: row.get("value") for row in
            find("Deployment", "umami")["spec"]["template"]["spec"]["containers"][0]["env"]}
-    assert env["TRACKER_SCRIPT_NAME"] == "p.js"
+    assert env["TRACKER_SCRIPT_NAME"] == "p"
     assert env["COLLECT_API_ENDPOINT"] == "/api/e"
+    # The tunnel itself answers 404 for every other path on that host.
+    config = yaml.safe_load(find("ConfigMap", "cloudflared", "infrastructure")["data"]["config.yaml"])
+    rules = [rule for rule in config["ingress"] if rule.get("hostname") == "umami.bariss.dev"]
+    assert [(rule.get("path"), rule["service"]) for rule in rules] == [
+        ("^/(p|api/e)$", "http://traefik.traefik.svc.cluster.local:80"),
+        (None, "http_status:404"),
+    ]
 
 
 def test_only_traefik_connects():
