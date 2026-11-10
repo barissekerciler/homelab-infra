@@ -1,4 +1,3 @@
-# homelab is the only control plane node and runs most workloads.
 machine:
   features:
     # tuppr (infrastructure/tuppr) upgrades Talos and Kubernetes over the Talos

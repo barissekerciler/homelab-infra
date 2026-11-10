@@ -20,7 +20,6 @@ class DispatcharrDataVolumeManifestTest(unittest.TestCase):
         }
 
     def test_web_and_worker_share_the_pinned_data_claim(self):
-        # Both pods are pinned to homelab, so they can share the RWO disk.
         for name in ("dispatcharr", "dispatcharr-celery"):
             with self.subTest(deployment=name):
                 pod = self.deployments[name]["spec"]["template"]["spec"]

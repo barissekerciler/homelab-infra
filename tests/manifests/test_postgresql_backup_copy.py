@@ -22,7 +22,7 @@ def find(kind, name):
 
 
 def test_no_logical_dumps_beside_the_backups():
-    # Barman Cloud's base backups and WAL are the backup; pg_dump is gone.
+    # Barman Cloud's base backups and WAL are the backup.
     assert [row["metadata"]["name"] for row in rendered() if row["kind"] == "CronJob"] == \
         ["postgresql-backup-copy"]
 

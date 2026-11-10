@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Prerequisites
-# - kustomize
-# - kubeconform
-
 COUNT=$#
 
 while test $# -gt 0; do

@@ -6,7 +6,6 @@ apiVersion: v1alpha1
 kind: ExtensionServiceConfig
 name: tailscale
 environment:
-  # Log in only when there is no stored node key.
   - TS_AUTH_ONCE=true
   # The nodes keep their own resolvers (machine.network.nameservers).
   - TS_ACCEPT_DNS=false
