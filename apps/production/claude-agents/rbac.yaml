@@ -1,6 +1,3 @@
-# Everything in this namespace for the box: pods, exec, Secrets, workloads,
-# Services, Ingresses and Roles. admission.yaml stops it from changing the
-# NetworkPolicy.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:

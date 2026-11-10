@@ -1,4 +1,3 @@
-# Provisioned by democratic-csi for the claude-browser-data claim.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

@@ -1,13 +1,3 @@
-# OpenBao, the official chart: one server on integrated raft storage, data on
-# the pinned iSCSI volume data-openbao-0 (volumes.yaml). One replica, because
-# raft quorum on two nodes is no better than one; the pod moves with its iSCSI
-# volume when a node goes away.
-#
-# The static seal unseals it after every restart from the 32-byte key in the
-# Secret openbao-seal, which is created by hand and never in Git, like Flux's
-# deploy key (README.md). The UI is https://openbao.home.bariss.dev (LAN and
-# Tailscale only) behind the GitHub sign-in; the CLI goes through
-# `kubectl port-forward`.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -109,27 +99,17 @@ spec:
             }
 
             service_registration "kubernetes" {}
-    # The chart's snapshot agent: a CronJob that saves a raft snapshot and
-    # uploads it with s3cmd to the bucket openbao-snapshots on SeaweedFS, a
-    # TrueNAS app (truenas/apps/seaweedfs), then deletes uploads older than
-    # 14 days.
-    # It signs in with its ServiceAccount openbao-snapshot (auth/kubernetes,
-    # role "snapshot": read on sys/storage/raft/snapshot only). A snapshot
-    # holds barrier-encrypted data: a restore needs the seal key (README.md).
     snapshotAgent:
       enabled: true
       # UTC, the chart sets no timeZone: 00:05 in Berlin in winter, 01:05 in
       # summer.
       schedule: "5 23 * * *"
-      # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for that bucket only
-      # (openbao-snapshots-s3-secret.yaml).
       s3CredentialsSecret: openbao-snapshots-s3
       config:
         s3Host: 10.0.0.203:8333
         s3Bucket: openbao-snapshots
         s3Uri: s3://openbao-snapshots
         s3ExpireDays: "14"
-        # Plain HTTP on the LAN.
         s3cmdExtraFlag: --no-ssl
       resources:
         requests:

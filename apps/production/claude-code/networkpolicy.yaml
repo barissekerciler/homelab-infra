@@ -1,7 +1,3 @@
-# Nothing connects to the box. It may reach the internet, the LAN and the
-# cluster, except where private data lives: the NAS (Nextcloud, Immich and
-# every iSCSI/NFS volume), the camera and its DNAT on the Cudy, the IoT
-# network, and the private apps' pods.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

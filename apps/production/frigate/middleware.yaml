@@ -1,5 +1,4 @@
-# GitHub sign-in through infrastructure/oauth2-proxy/home-bariss-dev. Frigate
-# takes the signed-in user from X-Auth-Request-User (config proxy.header_map).
+# Frigate takes the signed-in user from X-Auth-Request-User (config proxy.header_map).
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:

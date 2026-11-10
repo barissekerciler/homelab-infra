@@ -1,10 +1,3 @@
-# The pantry: databases that are handy but not worth a backup (test and
-# scratch data). It is not backed up. Whatever matters (photos, files, mail,
-# anything that must survive) goes into the main cluster (apps/production/postgresql)
-# instead. PostgreSQL backs up whole clusters, never single databases, hence
-# two clusters. A patch on the shared Cluster in apps/base/postgresql/cluster, renamed.
-# Apps connect to postgres-pantry-rw.postgresql.svc:5432. The namespace, the
-# superuser and the password store are shared (apps/base/postgresql).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:

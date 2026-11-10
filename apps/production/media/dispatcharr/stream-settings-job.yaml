@@ -3,7 +3,6 @@ kind: Job
 metadata:
   name: dispatcharr-stream-settings-v6
   annotations:
-    # Recreate the Job when its image changes; a Job's pod template is immutable.
     kustomize.toolkit.fluxcd.io/force: enabled
   labels:
     app: dispatcharr

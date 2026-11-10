@@ -1,11 +1,3 @@
-# Offsite copy of the raft snapshots. SeaweedFS keeps objects inside its own
-# volume files, so the snapshots cannot be picked out of its dataset. This
-# nightly job copies the bucket openbao-snapshots as plain files into
-# openbao/ on the TrueNAS dataset pool1/apps/db-dumps, which the Cloud Sync
-# task "Hetzner: database dumps" uploads, rclone-encrypted, at 00:45 Berlin
-# time. A restore then needs only one file and the seal key, no SeaweedFS
-# (whose keys come from OpenBao).
-#
 # The share is the one apps/production/postgresql/backup-copy.yaml mounts
 # (into postgresql/), owned by 999:999.
 apiVersion: v1
@@ -109,8 +101,6 @@ spec:
                   value: "30"
                 - name: HOME
                   value: /tmp
-                # The rclone remote "seaweedfs", read with the bucket's own
-                # key (AWS_* from openbao-snapshots-s3).
                 - name: RCLONE_CONFIG_SEAWEEDFS_TYPE
                   value: s3
                 - name: RCLONE_CONFIG_SEAWEEDFS_PROVIDER

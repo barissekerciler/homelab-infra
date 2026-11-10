@@ -1,5 +1,3 @@
-# The browser pod's data: the Chromium profile (cookies and site logins),
-# the Playwright browser build and screenshots.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

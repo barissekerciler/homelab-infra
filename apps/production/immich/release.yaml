@@ -17,7 +17,6 @@ spec:
         namespace: flux-system
   interval: 1h0m0s
   values:
-    # Shared by the server, machine learning and valkey.
     controllers:
       main:
         containers:

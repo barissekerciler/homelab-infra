@@ -1,12 +1,3 @@
-# Offsite copy of the main cluster's own backups. Barman Cloud writes base
-# backups and WAL to the bucket cnpg-backups on SeaweedFS, a TrueNAS app
-# (backups.yaml, truenas/apps/seaweedfs), and SeaweedFS keeps objects inside
-# its own volume files. This nightly job copies the bucket as plain files into
-# postgresql/ on the TrueNAS dataset pool1/apps/db-dumps (encrypted, NFS for
-# the two nodes only), which the Cloud Sync task "Hetzner: database dumps"
-# uploads, rclone-encrypted, at 00:45 Berlin. A restore from Hetzner needs
-# only those files in any S3 bucket (README.md), no SeaweedFS.
-#
 # It copies and never mirrors: a file leaves the copy only by age (KEEP_DAYS),
 # so a new or emptied bucket never drops older backups here, or at Hetzner.
 # The share also holds openbao/ (apps/production/openbao/snapshot-copy.yaml);
@@ -30,10 +21,8 @@ spec:
   nfs:
     server: 10.0.0.203
     path: /mnt/pool1/apps/db-dumps
-  # sync: each write reaches the NAS before rclone goes on. Asynchronous NFS
-  # writes pile up as dirty and writeback pages in the job's 512Mi cgroup
-  # faster than the NAS takes them; those pages cannot be reclaimed, so the
-  # kernel killed the copy while rclone itself held about 35 MiB.
+  # sync: asynchronous NFS writes pile up as dirty pages in the job's 512Mi
+  # cgroup faster than the NAS takes them, and the kernel kills the copy.
   mountOptions:
     - noatime
     - nfsvers=4.1
@@ -123,8 +112,6 @@ spec:
                   value: "0"
                 - name: HOME
                   value: /tmp
-                # The rclone remote "seaweedfs", read with the bucket's own
-                # key (AWS_* from cnpg-backups-s3).
                 - name: RCLONE_CONFIG_SEAWEEDFS_TYPE
                   value: s3
                 - name: RCLONE_CONFIG_SEAWEEDFS_PROVIDER

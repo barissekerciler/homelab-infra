@@ -1,8 +1,3 @@
-# What both PostgreSQL clusters share. The overlays give each its name, size
-# and backups: apps/production/postgresql (the main cluster `postgres`, backed
-# up) and apps/dev/postgresql (the pantry `postgres-pantry`, not backed up).
-# CloudNativePG (infrastructure/cloudnative-pg); runbook:
-# apps/production/postgresql/README.md.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -12,14 +7,10 @@ metadata:
     # so Flux never prunes it.
     kustomize.toolkit.fluxcd.io/prune: disabled
 spec:
-  # Each overlay sets its own count.
   instances: 1
-  # tensorchord's CloudNativePG image: PostgreSQL 17 with VectorChord 1.1.1 and
-  # pgvector 0.8, for Immich.
+  # VectorChord and pgvector, for Immich.
   imageName: ghcr.io/tensorchord/cloudnative-vectorchord:17.11-1.1.1@sha256:bb7eb8442f76b1e74911f28585019a77022911f8cfa2ddcfb166ea6af85abd09
   primaryUpdateStrategy: unsupervised
-  # The superuser password comes from OpenBao
-  # (apps/base/postgresql/postgres-superuser-secret.yaml).
   enableSuperuserAccess: true
   superuserSecret:
     name: postgres-superuser

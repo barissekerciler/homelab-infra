@@ -1,5 +1,3 @@
-# Volumes provisioned by the cluster, written down so a rebuilt
-# cluster binds each one to the same claim.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

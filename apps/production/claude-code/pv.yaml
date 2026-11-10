@@ -1,4 +1,3 @@
-# Provisioned by democratic-csi for the claude-code-home claim.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

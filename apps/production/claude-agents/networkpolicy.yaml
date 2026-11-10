@@ -1,6 +1,3 @@
-# Pods here reach what the box reaches (apps/production/claude-code): the
-# internet, the LAN and the cluster, but not the NAS, the camera, the IoT
-# network or the pods of the apps that hold private data.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

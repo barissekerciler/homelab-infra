@@ -1,7 +1,5 @@
-# The NAS copy of Frigate's media (nas-mirror-deployment.yaml): the TrueNAS
-# dataset pool1/k8s/static-disks/cam-records, exported to 10.0.0.150, .151
-# and .87 only. Only the mirror pod mounts it; Frigate itself keeps
-# recording on its node's own disk (an emptyDir) when the NAS is down.
+# The TrueNAS dataset pool1/k8s/static-disks/cam-records, exported to 10.0.0.150, .151
+# and .87 only.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

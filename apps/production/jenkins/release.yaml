@@ -17,9 +17,8 @@ spec:
   interval: 1h0m0s
   timeout: 20m0s
   # The chart's init script copies plugins with `yes n | cp -i` under set -e,
-  # which fails once the plugin emptyDir holds them. When Talos's OOM
-  # controller kills the pod, kubelet reruns the init containers in the same
-  # pod and the controller stays in CrashLoopBackOff. Empty the directory first.
+  # which fails once the plugin emptyDir holds them and the init containers
+  # rerun after an OOM kill. Empty the directory first.
   postRenderers:
     - kustomize:
         patches:
@@ -113,7 +112,6 @@ spec:
           memory: "4Gi"
     persistence:
       enabled: true
-      # iSCSI, so the scheduler may place the controller on either node.
       existingClaim: jenkins-home
     rbac:
       create: true

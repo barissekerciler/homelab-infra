@@ -1,4 +1,3 @@
-# Home directory of the box: login, projects and tools installed by Claude.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

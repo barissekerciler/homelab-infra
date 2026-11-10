@@ -1,4 +1,3 @@
-# Valkey with a password; its data is temporary (emptyDir).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

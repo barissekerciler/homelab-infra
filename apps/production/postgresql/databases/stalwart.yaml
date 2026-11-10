@@ -1,8 +1,4 @@
-# Stalwart (apps/production/mail/stalwart): its settings and the mail itself,
-# in stalwart_v1. `stalwart` holds the v0.16 store, kept as the way back.
-# Role stalwart; its password is generated once into OpenBao
-# secret/postgresql/stalwart-db (apps/base/postgresql/passwords.yaml) and
-# read back by stalwart-db-secret.yaml.
+# Stalwart v1 uses stalwart_v1; `stalwart` holds the v0.16 store, kept as the way back.
 apiVersion: external-secrets.io/v1alpha1
 kind: PushSecret
 metadata:
@@ -51,8 +47,6 @@ spec:
   name: stalwart
   owner: stalwart
 ---
-# Stalwart v1's store, copied from the v0.16 store in `stalwart` by
-# stalwart-migrate (v1 cannot open the v0.16 layout).
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
 metadata:

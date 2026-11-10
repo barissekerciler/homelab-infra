@@ -1,7 +1,3 @@
-# Vikunja (apps/production/vikunja).
-# Role vikunja; its password is generated once into OpenBao
-# secret/postgresql/vikunja-db (apps/base/postgresql/passwords.yaml) and
-# read back by vikunja-db-secret.yaml.
 apiVersion: external-secrets.io/v1alpha1
 kind: PushSecret
 metadata:

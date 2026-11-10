@@ -1,6 +1,3 @@
-# Only the box drives the browser (MCP on 8931), and only Traefik, behind
-# the GitHub sign-in, shows its screen (noVNC on 6080). Other pods in
-# claude-agents cannot reach either.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

@@ -34,6 +34,5 @@ spec:
             limits:
               cpu: "1"
               # Chromium sits near 0.4 GiB and rarely passes 1 GiB while it
-              # solves a challenge. Past the limit the kernel kills it in its
-              # own cgroup and the pod restarts; its neighbours keep their memory.
+              # solves a challenge.
               memory: 1Gi

@@ -20,7 +20,6 @@ spec:
       labels:
         app: frigate
     spec:
-      # Scheduled ahead of other homelab workloads (priorityclass.yaml).
       priorityClassName: frigate-camera
       # Frigate substitutes FRIGATE_* variables into its config; no
       # FRIGATE_SERVICE_HOST, FRIGATE_PORT and the like from the Service.
@@ -53,7 +52,6 @@ spec:
               readOnly: true
             - name: config
               mountPath: /config
-        # Git is the source of truth; changes saved in the UI last until restart.
         - name: copy-config
           image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
           command:
@@ -121,10 +119,6 @@ spec:
               mountPath: /dev/shm
             - name: cache
               mountPath: /tmp/cache
-        # Sends new segments and snapshots, encrypted, to the Hetzner Storage
-        # Box (uploader-configmap.yaml). Both rclone remotes come from the
-        # environment; there is no rclone.conf. The Storage Box account, its key
-        # and the crypt password come from frigate-uploader-secrets.
         - name: uploader
           image: rclone/rclone:1.76.0@sha256:7cbeec24a44f206067597c0368be4de90ae19a64d5113c7d1938bd737a81e466
           command:
@@ -134,8 +128,6 @@ spec:
             # Config lives in memory only; no missing-file notice per run.
             - name: RCLONE_CONFIG
               value: /dev/null
-            # The Storage Box sub-account for frigate/; host and user are in
-            # frigate-uploader-secrets.
             - name: RCLONE_CONFIG_HETZNER_TYPE
               value: sftp
             - name: RCLONE_CONFIG_HETZNER_HOST
@@ -158,7 +150,6 @@ spec:
                 secretKeyRef:
                   name: frigate-uploader-secrets
                   key: RCLONE_CONFIG_HETZNER_KEY_PEM
-            # Encrypts file contents and names into hetzner:data.
             - name: RCLONE_CONFIG_CRYPT_TYPE
               value: crypt
             - name: RCLONE_CONFIG_CRYPT_REMOTE
@@ -208,10 +199,6 @@ spec:
               readOnly: true
             - name: state
               mountPath: /state
-        # Copies new recordings and snapshots, as they are, to the NAS through
-        # the frigate-nas-mirror pod's WebDAV server (nas-push-configmap.yaml).
-        # This pod never mounts the NAS: with the NAS down, only the copy
-        # waits and Frigate keeps starting, recording and uploading.
         - name: nas-push
           image: rclone/rclone:1.76.0@sha256:7cbeec24a44f206067597c0368be4de90ae19a64d5113c7d1938bd737a81e466
           command:
@@ -237,7 +224,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-          # Restarts a copy with no good run for 30 minutes.
           livenessProbe:
             exec:
               command:
@@ -259,7 +245,6 @@ spec:
             - name: media
               mountPath: /media/frigate
               readOnly: true
-            # Only the uploader's filter.txt.
             - name: push-filter
               mountPath: /etc/uploader
               readOnly: true
@@ -272,7 +257,6 @@ spec:
         - name: config-git
           configMap:
             name: frigate-config
-        # SQLite database and model cache. Not kept: a new pod starts empty.
         - name: config
           emptyDir:
             sizeLimit: 1Gi
@@ -283,12 +267,10 @@ spec:
         - name: media
           emptyDir:
             sizeLimit: 100Gi
-        # Decoded frames.
         - name: shm
           emptyDir:
             medium: Memory
             sizeLimit: 256Mi
-        # Segments wait here until Frigate moves them to /media/frigate.
         - name: cache
           emptyDir:
             medium: Memory
@@ -296,8 +278,6 @@ spec:
         - name: uploader
           configMap:
             name: frigate-uploader
-        # The uploader's heartbeat and pause switch. They survive container
-        # restarts, not a new pod.
         - name: state
           emptyDir:
             sizeLimit: 1Mi
@@ -310,7 +290,6 @@ spec:
         - name: nas-push
           configMap:
             name: frigate-nas-push
-        # nas-push's heartbeat.
         - name: push-state
           emptyDir:
             sizeLimit: 1Mi
