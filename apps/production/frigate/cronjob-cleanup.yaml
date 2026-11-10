@@ -16,6 +16,7 @@ spec:
     spec:
       activeDeadlineSeconds: 3600
       backoffLimit: 2
+      ttlSecondsAfterFinished: 3600
       template:
         metadata:
           # Not app: frigate, so the Service never routes to this pod.
