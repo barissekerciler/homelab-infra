@@ -72,9 +72,14 @@ def test_nightly_snapshot_goes_to_its_bucket_on_the_nas_through_the_chart_agent(
     # The key for that bucket only, from OpenBao itself.
     secret = find("ExternalSecret", agent["s3CredentialsSecret"])
     assert {item["secretKey"] for item in secret["spec"]["data"]} == {"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"}
-    # The chart's CronJob takes the snapshot; no hand-written one beside it,
-    # and no post-renderer that suspends it.
-    assert "postRenderers" not in find("HelmRelease", "openbao")["spec"]
+    # The chart's CronJob takes the snapshot; no hand-written one beside it.
+    # The one post-renderer only adds the TTL the chart has no value for; it
+    # never suspends the CronJob.
+    [renderer] = find("HelmRelease", "openbao")["spec"]["postRenderers"]
+    [patch] = renderer["kustomize"]["patches"]
+    assert patch["target"] == {"kind": "CronJob", "name": "openbao-snapshot"}
+    assert yaml.safe_load(patch["patch"]) == [
+        {"op": "add", "path": "/spec/jobTemplate/spec/ttlSecondsAfterFinished", "value": 3600}]
     assert [row["metadata"]["name"] for row in rendered() if row["kind"] == "CronJob"] == \
         ["openbao-snapshot-copy"]
     assert not [row for row in rendered() if row["kind"] == "ServiceAccount"]
