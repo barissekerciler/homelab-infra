@@ -1,7 +1,3 @@
-# Dispatcharr (apps/production/media/dispatcharr).
-# Role dispatcharr; its password is generated once into OpenBao
-# secret/postgresql/dispatcharr-db (apps/base/postgresql/passwords.yaml) and
-# read back by dispatcharr-db-secret.yaml.
 apiVersion: external-secrets.io/v1alpha1
 kind: PushSecret
 metadata:

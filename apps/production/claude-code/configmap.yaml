@@ -18,8 +18,6 @@ data:
     redis-tools
     gh
     age
-  # CLIs the desktop uses for this repo, installed by mise into the home
-  # volume. Claude adds more with `mise use -g <tool>@<version>`.
   mise-tools.txt: |
     kubectl@1.33
     flux2@2.9

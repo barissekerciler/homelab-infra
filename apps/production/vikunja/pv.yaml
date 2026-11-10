@@ -1,4 +1,3 @@
-# Attachments, avatars and project backgrounds. Tasks live in the cluster PostgreSQL.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

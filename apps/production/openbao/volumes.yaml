@@ -1,6 +1,4 @@
-# The raft data volume (iSCSI), claimed by the chart StatefulSet's
-# volumeClaimTemplate "data" as data-openbao-0. Snapshots go to SeaweedFS
-# (release.yaml).
+# Claimed by the chart StatefulSet's volumeClaimTemplate "data" as data-openbao-0.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

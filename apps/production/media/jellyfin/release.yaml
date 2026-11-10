@@ -61,7 +61,6 @@ spec:
           claimName: radarr-nfs-content-pvc
       - name: transcodes
         emptyDir: {}
-      # Dispatcharr DVR output, played from a Jellyfin library.
       - name: dispatcharr-recordings
         persistentVolumeClaim:
           claimName: dispatcharr-recordings-pvc
@@ -79,10 +78,8 @@ spec:
         mountPath: /config/transcodes
       - name: transcodes
         mountPath: /cache/transcodes
-    # The Intel device plugin adds the node's QuickSync GPU to the pod. Both
-    # nodes have the same i5-6500 iGPU: it decodes H.264, 8-bit HEVC, MPEG-2,
-    # VC-1 and VP8, not 10-bit HEVC or AV1, so Jellyfin's hardware decoding
-    # settings hold on either node.
+    # Both nodes have the same i5-6500 iGPU (no 10-bit HEVC or AV1 decoding),
+    # so Jellyfin's hardware decoding settings hold on either node.
     resources:
       requests:
         cpu: 50m

@@ -1,7 +1,5 @@
-# The official Vikunja chart (bjw-s common library; values sit under
-# `vikunja:`). Tasks live in the cluster PostgreSQL, files on
-# the pinned iSCSI volume. The ingress takes the wildcard certificate from
-# Traefik's default TLSStore.
+# bjw-s common library chart: values sit under `vikunja:`. The ingress takes the
+# wildcard certificate from Traefik's default TLSStore.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

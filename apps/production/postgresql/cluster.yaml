@@ -1,11 +1,3 @@
-# The main cluster, the one that is backed up: the data that matters (Immich,
-# Nextcloud, mail, Vikunja, Dispatcharr).
-# Handy but expendable data goes to the pantry (apps/dev/postgresql). A patch
-# on the shared Cluster in apps/base/postgresql/cluster: two instances, one per node.
-# The primary is the Service postgres-rw (postgres-rw.postgresql.svc:5432);
-# apps connect there directly, without a pooler. Volumes: provisioned by the
-# operator; a rebuilt cluster comes back from the Barman Cloud backups
-# (backups.yaml), not from pinned volumes.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:

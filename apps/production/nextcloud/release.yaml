@@ -1,6 +1,4 @@
-# The official Nextcloud chart. Upgrades: raise the chart version; the
-# image's entrypoint copies the new code and runs occ upgrade. Nextcloud
-# cannot go back, so never lower the chart below the running version.
+# Nextcloud cannot go back: never lower the chart below the running version.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -113,7 +111,6 @@ spec:
       type: postgresql
       host: postgres-rw.postgresql.svc.cluster.local:5432
       database: nextcloud
-      # Role nextcloud and its generated password (nextcloud-db-secret.yaml).
       existingSecret:
         enabled: true
         secretName: nextcloud-db

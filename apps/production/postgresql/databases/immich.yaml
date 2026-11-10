@@ -1,8 +1,5 @@
-# Immich (apps/production/immich). VectorChord and pgvector need the superuser
-# to create them, so the Database does; Immich only uses them.
-# Role immich; its password is generated once into OpenBao
-# secret/postgresql/immich-db (apps/base/postgresql/passwords.yaml) and
-# read back by immich-db-secret.yaml.
+# VectorChord and pgvector need the superuser to create them, so the Database
+# does; Immich only uses them.
 apiVersion: external-secrets.io/v1alpha1
 kind: PushSecret
 metadata:

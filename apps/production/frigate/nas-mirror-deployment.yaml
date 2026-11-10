@@ -25,7 +25,6 @@ spec:
       labels:
         app: frigate-nas-mirror
     spec:
-      # Scheduled ahead of other homelab workloads (priorityclass.yaml).
       priorityClassName: frigate-camera
       containers:
         - name: mirror
@@ -60,7 +59,6 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 30
             failureThreshold: 5
-          # homelab has 3990m of 4000m requested; this is light file I/O.
           resources:
             requests:
               cpu: 75m

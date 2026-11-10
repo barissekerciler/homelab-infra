@@ -1,5 +1,3 @@
-# Files the chart mounts through nextcloud.extraVolumes: the extra apt
-# packages, the occ helper and Apache's request body limit.
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -1,6 +1,3 @@
-# Claude Code running 24/7 on the Claude subscription, steered from the
-# Claude app and claude.ai/code through Remote Control. It only dials out;
-# nothing listens. See README.md for the one-time sign-in.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -64,19 +61,14 @@ spec:
           env:
             - name: HOME
               value: /home/vscode
-            # The image's PATH with the home volume's tools first.
             - name: PATH
               value: /home/vscode/.local/bin:/home/vscode/.local/share/mise/shims:/home/vscode/.local/node/bin:/usr/local/python/current/bin:/usr/local/py-utils/bin:/usr/local/share/nvm/current/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
             - name: LANG
               value: C.UTF-8
             - name: TERM
               value: xterm-256color
-            # The box and its sessions show up as homelab-claude-agent… in the
-            # Claude app.
             - name: CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX
               value: homelab-claude-agent
-            # Starting mode for new sessions: auto runs commands without asking
-            # and lets the classifier stop risky ones. Changeable per session.
             - name: CLAUDE_PERMISSION_MODE
               value: auto
             # No claude.ai connectors (Gmail, Drive, Calendar and the rest) on

@@ -1,5 +1,3 @@
-# The uploader sidecar: its loop, the rclone filter and the Storage Box host
-# keys. Both rclone remotes come from the environment (deployment.yaml).
 apiVersion: v1
 kind: ConfigMap
 metadata:

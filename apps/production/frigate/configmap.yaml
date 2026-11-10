@@ -1,5 +1,5 @@
-# Frigate 0.18 config. The init container copies it to /config at every
-# start, so Git wins over changes saved in the Frigate UI.
+# The init container copies it to /config at every start, so Git wins over
+# changes saved in the Frigate UI.
 # Keys: https://docs.frigate.video/configuration/advanced/reference
 apiVersion: v1
 kind: ConfigMap

@@ -1,5 +1,4 @@
-# The nas-push sidecar's loop, in the Frigate pod. The rclone filter is the
-# uploader's (frigate-uploader, filter.txt).
+# The rclone filter is the uploader's (frigate-uploader, filter.txt).
 apiVersion: v1
 kind: ConfigMap
 metadata:

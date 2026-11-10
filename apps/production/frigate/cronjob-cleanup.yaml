@@ -1,5 +1,3 @@
-# Deletes off-site footage older than 30 days, as Frigate does locally, then
-# the empty folders. Same image, remotes and Secret as the uploader sidecar.
 apiVersion: batch/v1
 kind: CronJob
 metadata:

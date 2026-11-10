@@ -1,6 +1,4 @@
-# The browser's screen at https://agent-browser.home.bariss.dev/vnc.html
-# (LAN and Tailscale only), behind the GitHub sign-in. The /oauth2/ callback
-# for this host is served by the oauth2-proxy ingress in
+# The /oauth2/ callback for this host is served by the oauth2-proxy ingress in
 # infrastructure/oauth2-proxy/home-bariss-dev.
 apiVersion: traefik.io/v1alpha1
 kind: Middleware

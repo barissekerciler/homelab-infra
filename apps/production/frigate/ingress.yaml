@@ -1,6 +1,5 @@
-# Frigate UI at https://cam.home.bariss.dev (LAN and Tailscale only), behind
-# the GitHub sign-in. The /oauth2/ callback for this host is served by the
-# oauth2-proxy ingress in infrastructure/oauth2-proxy/home-bariss-dev.
+# The /oauth2/ callback for this host is served by the oauth2-proxy ingress in
+# infrastructure/oauth2-proxy/home-bariss-dev.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

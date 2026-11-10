@@ -1,14 +1,8 @@
-# The box reads the whole cluster, except Secrets, and never execs into,
-# port-forwards to or proxies anything outside claude-agents. It may do
-# anything inside claude-agents (apps/production/claude-agents). Everything
-# else changes through Git.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: claude-code
 ---
-# The built-in view role: namespaced objects, logs, events, metrics and the
-# Flux, cert-manager and Flux Operator kinds aggregated into it. No Secrets.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -22,8 +16,6 @@ subjects:
     name: claude-code
     namespace: claude-code
 ---
-# Nodes, other cluster-scoped objects and the CRD kinds that view leaves
-# out, read only.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -47,9 +39,6 @@ rules:
   - apiGroups: [scheduling.k8s.io]
     resources: [priorityclasses]
     verbs: [get, list, watch]
-  # The platform's own kinds: Traefik, Cilium, tuppr (Talos and Kubernetes
-  # upgrades), Talos ServiceAccounts, CloudNativePG and its Barman Cloud
-  # plugin, Prometheus Operator and VPA.
   - apiGroups:
       - traefik.io
       - hub.traefik.io

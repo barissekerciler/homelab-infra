@@ -1,5 +1,3 @@
-# The volume seerr-pvc is bound to, written down so a rebuilt cluster
-# binds it again.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
