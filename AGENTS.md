@@ -44,6 +44,11 @@ found something those explanations miss:
   and the pull requests opened from them, never pull requests from forks, in
   a pod without a ServiceAccount token.
 - Public hosts only through the Cloudflare tunnel; no port forwards.
+- Umami's tracker public on `umami.bariss.dev`, two paths only, proxied from
+  the blog's own host by its Cloudflare Pages Function; the dashboard stays
+  behind the GitHub sign-in.
+- One sign-in host, `auth.home.bariss.dev`, for every admin UI: one GitHub
+  callback URL, wildcard matching off.
 - Claude Code box (`apps/production/claude-code`): reads the cluster without
   Secrets, admin only in `claude-agents`, fenced by admission policies, egress
   NetworkPolicies and an OpenBao store that refuses its namespaces.
@@ -104,7 +109,7 @@ found something those explanations miss:
 - `flux` with image automation; `flux-operator` only for its Flux metrics
   (`flux_resource_info`), without a FluxInstance or its Web UI
 - `oauth2-proxy` (`infrastructure/oauth2-proxy/home-bariss-dev`): GitHub
-  sign-in in front of the admin UIs
+  sign-in in front of the admin UIs, all through `auth.home.bariss.dev`
 - `jenkins`: CI, including this repository's checks (`Jenkinsfile`)
 - `cilium`: CNI (VXLAN, WireGuard between the nodes), kube-proxy replacement
   and NetworkPolicy enforcement; hostPorts answer on the LAN NIC and
