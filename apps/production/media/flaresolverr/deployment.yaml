@@ -21,19 +21,6 @@ spec:
       labels:
         app: flaresolverr
     spec:
-      # Its Chromium jumps from ~0.5 to ~1.5 GiB while it solves a challenge.
-      # On homelab2 (7 GB, requests nearly full) that spike made Talos's OOM
-      # controller kill Jenkins, so run it on homelab when there is room.
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - homelab
       containers:
         - name: flaresolverr
           image: flaresolverr/flaresolverr:latest@sha256:c80ae007ce2ccdcd217a12426e4f039ef763ff90738c808d38810c3e59323767
@@ -43,8 +30,10 @@ spec:
           resources:
             requests:
               cpu: 200m
-              memory: 512Mi
+              memory: 384Mi
             limits:
               cpu: "1"
-              # A runaway browser is killed in its own cgroup, not the node.
-              memory: 2Gi
+              # Chromium sits near 0.4 GiB and rarely passes 1 GiB while it
+              # solves a challenge. Past the limit the kernel kills it in its
+              # own cgroup and the pod restarts; its neighbours keep their memory.
+              memory: 1Gi
