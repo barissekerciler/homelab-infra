@@ -151,7 +151,7 @@ def test_media_is_not_pinned_and_sonarr_rdt_share_their_rwo_volumes_node():
     together = [{"labelSelector": {"matchLabels": group}, "topologyKey": "kubernetes.io/hostname"}]
     for name in ("sonarr", "rdt"):
         assert group.items() <= rows[name]["spec"]["template"]["metadata"]["labels"].items(), name
-    for name in ("sonarr", "rdt", "sonarr-stalled-requeue", "rdt-lifetime-cleanup"):
+    for name in ("sonarr", "rdt", "sonarr-stalled-requeue"):
         assert not spec(name).get("nodeSelector"), name
         assert spec(name)["affinity"]["podAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"] == together, name
 

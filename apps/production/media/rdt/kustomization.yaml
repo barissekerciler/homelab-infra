@@ -4,7 +4,6 @@ commonAnnotations:
   kustomize.toolkit.fluxcd.io/prune: disabled
 resources:
   - config-normalizer.yaml
-  - lifetime-cleanup-cronjob.yaml
   - pv.yaml
   - pvc.yaml
   - deployment.yaml
