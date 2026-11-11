@@ -22,7 +22,7 @@ spec:
     spec:
       affinity:
         # sonarr-stalled-requeue mounts sonarr's and rdt's RWO config volumes,
-        # so sonarr, rdt and their CronJobs share a node. The first of them
+        # so sonarr, rdt and that CronJob share a node. The first of them
         # to start may pick any node.
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

@@ -30,6 +30,9 @@ class RdtNormalizerTest(unittest.TestCase):
             create table Torrents (TorrentId text primary key, Error text);
             create table Downloads (DownloadId text primary key, TorrentId text);
             insert into Settings values ('Integrations:Default:ExcludeRegex', null);
+            insert into Settings values ('Integrations:Default:DeleteOnError', '1');
+            insert into Torrents values ('t1', 'Torrent lifetime of 360 minutes reached');
+            insert into Downloads values ('d1', 't1');
             """
         )
         con.commit()
@@ -73,10 +76,18 @@ class RdtNormalizerTest(unittest.TestCase):
         ):
             self.assertFalse(regex.search(media), media)
 
-    def test_delete_on_error_stays_enabled(self):
+    def test_failed_torrents_stay_for_sonarr_to_handle(self):
+        # A torrent rdt deletes leaves Sonarr's queue without a failed event:
+        # no blocklist, no new search (sonarr-stalled-requeue handles errors).
         settings = self.settings()
         for default in DEFAULTS:
-            self.assertEqual(settings[f"{default}:Default:DeleteOnError"], "1")
+            self.assertEqual(settings[f"{default}:Default:DeleteOnError"], "0")
+        con = sqlite3.connect(self.db)
+        try:
+            self.assertEqual(con.execute("select count(*) from Torrents").fetchone()[0], 1)
+            self.assertEqual(con.execute("select count(*) from Downloads").fetchone()[0], 1)
+        finally:
+            con.close()
 
 
 if __name__ == "__main__":
