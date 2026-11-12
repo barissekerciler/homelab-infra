@@ -1,0 +1,12 @@
+# Memory requests on both nodes are nearly full, and the replica may only run
+# on the node without the primary (required anti-affinity). With this class
+# the scheduler evicts a lower-priority pod there instead of leaving the
+# replica Pending. Cluster-scoped.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: postgres
+value: 100000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: The postgres instances beat other homelab workloads.

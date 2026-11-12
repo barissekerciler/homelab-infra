@@ -94,7 +94,10 @@ kubectl -n postgresql exec -it "$primary" -c postgres -- psql      # peer login 
 A drained node's primary is switched over to the other instance first (the
 operator's PodDisruptionBudgets), so tuppr's reboots move the primary instead
 of dropping it. That needs the other instance ready; without it the PDB blocks
-the drain, so tuppr waits for both instances before each node. A manual
+the drain, so tuppr waits for both instances before each node. The instances
+run in the `postgres` PriorityClass: the replica may only run on the node
+without the primary, and when that node is full the scheduler evicts a
+lower-priority pod rather than leave the replica Pending. A manual
 switchover:
 
 ```sh
