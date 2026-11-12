@@ -83,10 +83,10 @@ def test_hostports_answer_on_the_lan_and_tailscale():
 def test_ipblocks_also_match_node_addresses():
     # Cilium matches node addresses in an ipBlock only in this mode, and even
     # then 0.0.0.0/0 (with except) does not select the pod's own node (seen on
-    # 1.20.4). claude-code and claude-agents list both nodes explicitly, so
-    # the API server and host-network pods stay reachable from either node.
+    # 1.20.4). claude-code and claude-agents list every node explicitly, so
+    # the API servers and host-network pods stay reachable from any node.
     assert "nodes" in values()["policyCIDRMatchMode"]
-    nodes = {need("HOMELAB_IP") + "/32", need("HOMELAB2_IP") + "/32"}
+    nodes = {need(key) + "/32" for key in ("HOMELAB_IP", "HOMELAB2_IP", "HOMELAB3_IP")}
     for path in ("apps/production/claude-code/networkpolicy.yaml",
                  "apps/production/claude-agents/networkpolicy.yaml"):
         policy = yaml.safe_load((ROOT / path).read_text(encoding="utf-8"))

@@ -96,7 +96,7 @@ What the policies in this repository depend on:
   `policyCIDRMatchMode: [nodes]`, the nodes' own addresses: the API server and
   host-network pods such as AdGuard. Pods match only pod and namespace
   selectors. A `0.0.0.0/0` block does not select the pod's own node, so the
-  claude-code and claude-agents egress rules list both node addresses.
+  claude-code and claude-agents egress rules list every node address.
 - hostPorts and NodePorts answer on the addresses of Cilium's `devices`: the
   LAN NIC (`en+`) and `tailscale0`, so Traefik answers on the nodes' LAN and
   Tailscale addresses. A hostPort's backend is on the same node, so the client

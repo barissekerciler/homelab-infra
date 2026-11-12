@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-KEYS = ("DOMAIN", "HOMELAB_IP", "HOMELAB2_IP", "PI_IP", "NAS_IP", "CAMERA_IP", "ROUTER_DNAT_IP",
+KEYS = ("DOMAIN", "HOMELAB_IP", "HOMELAB2_IP", "HOMELAB3_IP", "PI_IP", "NAS_IP", "CAMERA_IP", "ROUTER_DNAT_IP",
         "IOT_SUBNET", "TAILSCALE_HOMELAB_IP", "TAILSCALE_HOMELAB2_IP", "TAILSCALE_PI_IP",
         "NAS_POOL", "GITHUB_USER", "JENKINS_HOME_PV")
 
