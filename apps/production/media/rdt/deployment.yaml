@@ -8,6 +8,12 @@ metadata:
     reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
+  # The RWO config volume detaches before the new pod starts.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: rdt

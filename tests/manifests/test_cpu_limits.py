@@ -142,9 +142,10 @@ def test_media_is_not_pinned_or_bound_to_another_pods_node():
     for name in ("bazarr", "radarr", "rdt", "sonarr", "unpackerr", "seerr"):
         assert not spec(name).get("nodeSelector"), name
         assert "nodeAffinity" not in spec(name).get("affinity", {}), name
-    # seerr's RWO volume detaches before the new pod starts.
-    assert rows["seerr"]["spec"]["strategy"] == {
-        "type": "RollingUpdate", "rollingUpdate": {"maxSurge": 0, "maxUnavailable": 1}}
+    # seerr's and rdt's RWO volumes detach before the new pod starts.
+    for name in ("seerr", "rdt"):
+        assert rows[name]["spec"]["strategy"] == {
+            "type": "RollingUpdate", "rollingUpdate": {"maxSurge": 0, "maxUnavailable": 1}}, name
     # sonarr-stalled-requeue talks to sonarr and rdt over HTTP, so nothing
     # ties them to one node.
     for name in ("sonarr", "rdt", "sonarr-stalled-requeue"):
