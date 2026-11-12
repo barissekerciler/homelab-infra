@@ -19,8 +19,9 @@ flowchart TB
     flux["Flux"]
     subgraph nodes["Nodes"]
       direction LR
-      cp["homelab<br/>control plane and workloads"]
-      worker["homelab2<br/>worker"]
+      n1["homelab<br/>control plane and workloads"]
+      n2["homelab2<br/>control plane and workloads"]
+      n3["homelab3<br/>control plane and workloads"]
     end
     secrets["OpenBao and External Secrets"]
     jenkins["Jenkins<br/>checks branches and pull requests"]
@@ -55,8 +56,9 @@ flowchart TB
 
 | Host | Role |
 | --- | --- |
-| `homelab` | Talos control plane, also runs workloads; Intel iGPU for transcoding and Frigate |
-| `homelab2` | Talos worker |
+| `homelab` | Talos control plane, also runs workloads (i5-6500, 32 GB) |
+| `homelab2` | Talos control plane, also runs workloads (i5-6500, 8 GB) |
+| `homelab3` | Talos control plane, also runs workloads (i5-7500T, 16 GB) |
 | TrueNAS | iSCSI and NFS storage for the cluster (democratic-csi), SeaweedFS as the S3 staging area for database backups, nightly encrypted sync to a Hetzner Storage Box |
 | Raspberry Pi | AdGuard Home, Home Assistant, Mosquitto (MQTT for Frigate), Vaultwarden behind Caddy (Docker Compose, managed separately) |
 
@@ -234,7 +236,8 @@ or a host-network pod reaches any pod on that node past its NetworkPolicy
 ## Sign-in
 
 AdGuard resolves the `*.home.bariss.dev` hosts for LAN and Tailscale clients
-only: one wildcard per client group answers every name with both nodes, so a
+only: one wildcard per client group answers every name with the nodes'
+addresses (homelab3 has no Tailscale address yet), so a
 new ingress host needs no DNS change. Only the Raspberry Pi's names (Caddy) are
 listed in `infrastructure/adguardhome/adguardhome-config.yaml`
 (`tests/manifests/test_adguard_rules.py`).
@@ -479,8 +482,8 @@ everything, by design.
 
 | What fails | What happens | Recovery |
 | --- | --- | --- |
-| `homelab2` | The API keeps working. Its pods move to `homelab` (nothing is pinned to a node); iSCSI volumes follow once Kubernetes gives up on the lost node. | Nothing needed; bring the node back. The descheduler (`infrastructure/descheduler`) moves pods without volumes back while it is nearly empty. |
-| `homelab` | It is the only control plane: pods on `homelab2` keep running, but nothing is scheduled, restarted or applied until it is back. | Repair or reinstall it with `talos/`. |
+| One node | etcd keeps its quorum and the API keeps working. The node's pods move to the other two as far as they fit (only AdGuard is pinned, to `homelab`); iSCSI volumes follow once Kubernetes gives up on the lost node. With `homelab` down, kubectl and talosctl need another node's address. | Nothing needed; bring the node back. The descheduler (`infrastructure/descheduler`) moves pods without volumes back while it is nearly empty. |
+| Two nodes | etcd loses its quorum: running pods keep running, but nothing is scheduled, restarted or applied until a second node is back. | Repair or reinstall one with `talos/`. |
 | The whole cluster | The volumes, SeaweedFS and the copies are on TrueNAS; at most PostgreSQL's last few minutes are lost. | Install Talos, create the [bootstrap](#bootstrap) Secrets and OpenBao's seal key; Flux rebuilds everything from Git, pinned volumes bind their old disks, and PostgreSQL restores from its Barman Cloud backups. |
 | TrueNAS | All volumes and the on-site backups. | Restore from the Storage Box: PostgreSQL and OpenBao from `db-dumps`, Immich and Nextcloud from their own copies. |
 | The house | Everything on site. | Start over from Git and the Storage Box. That needs the keys kept outside the house: OpenBao's seal key and the Cloud Sync encryption password and salt. |

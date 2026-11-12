@@ -4,7 +4,7 @@ Guidance for coding agents (and humans) working in this repository.
 
 ## Overview
 
-A GitOps-managed homelab. Flux reconciles the `main` branch into a two-node
+A GitOps-managed homelab. Flux reconciles the `main` branch into a three-node
 Talos Linux cluster. Secret values live in OpenBao; Git holds ExternalSecrets
 that the External Secrets Operator turns into Secrets. SOPS with Age is left
 only for the democratic-csi driver configs, which OpenBao's own volume needs.
@@ -30,8 +30,8 @@ of them.
 - `tenants/`: Flux tenants: namespace, ServiceAccount, Git source and
   Kustomizations for each private repository
 - `talos/`: Talos machine config patches, applied with `talosctl`, not by Flux
-  (`talos/README.md`). homelab (10.0.0.150) is the schedulable control plane,
-  homelab2 (10.0.0.151) the worker. Cilium (`infrastructure/cilium`) is the
+  (`talos/README.md`). homelab (10.0.0.150), homelab2 (10.0.0.151) and
+  homelab3 (10.0.0.152) are control planes that also run workloads. Cilium (`infrastructure/cilium`) is the
   CNI, replaces kube-proxy and enforces NetworkPolicies (check:
   `scripts/check-network-policies.sh`). tuppr
   (`infrastructure/tuppr`) upgrades Talos and Kubernetes patch releases at

@@ -15,7 +15,7 @@ DS = {"type": "prometheus", "uid": "prometheus"}
 
 # Categorical slots in fixed order (dark-surface steps) and the status steps.
 SLOT = ["#3987e5", "#d95926", "#199e70", "#c98500"]
-NODE = {"homelab": SLOT[0], "homelab2": SLOT[1]}
+NODE = {"homelab": SLOT[0], "homelab2": SLOT[1], "homelab3": SLOT[2]}
 GOOD, WARN, SERIOUS, CRIT = "#0ca30c", "#fab219", "#ec835a", "#d03b3b"
 NEUTRAL = "#3987e5"
 
@@ -305,18 +305,18 @@ y += 6
 
 row("Nodes", y)
 y += 1
-names = ["homelab", "homelab2"]
+names = list(NODE)
 timeseries("CPU used", [target(cpu_used(), "{{nodename}}")], 0, y, 8, 8,
            "percentunit", names, minimum=0, maximum=1)
 timeseries("Memory used", [target(mem_used(), "{{nodename}}")], 8, y, 8, 8, "percentunit", names,
            minimum=0, maximum=1)
-temp_names = ["homelab CPU", "homelab2 CPU", "homelab2 NVMe"]
+temp_names = ["homelab CPU", "homelab2 CPU", "homelab2 NVMe", "homelab3 CPU", "homelab3 NVMe"]
 timeseries("Temperature", [
     target(f'max by (nodename) (node_thermal_zone_temp{{type="x86_pkg_temp",{NODES}}} {NODENAME})', "{{nodename}} CPU", "A"),
     target(f'max by (nodename) (node_hwmon_temp_celsius{{chip=~"nvme.*",sensor="temp1",{NODES}}} {NODENAME})', "{{nodename}} NVMe", "B"),
 ], 16, y, 8, 8, "celsius", temp_names, desc="CPU package and NVMe (dashed) temperature.")
 y += 8
-net_names = ["homelab in", "homelab out", "homelab2 in", "homelab2 out"]
+net_names = [f"{node} {way}" for node in NODE for way in ("in", "out")]
 net = 'sum by (nodename) (rate(node_network_{d}_bytes_total{{device=~"en.*|eth.*",{n}}}[5m]) {j})'
 timeseries("Network", [
     target(net.format(d="receive", n=NODES, j=NODENAME), "{{nodename}} in", "A"),

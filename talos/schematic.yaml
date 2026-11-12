@@ -1,4 +1,4 @@
-# Talos Image Factory schematic for homelab and homelab2. Its ID goes into
+# Talos Image Factory schematic for every node. Its ID goes into
 # the installer image in talos/README.md; recompute it after any change with
 #   curl -X POST --data-binary @talos/schematic.yaml https://factory.talos.dev/schematics
 customization:

@@ -2,7 +2,7 @@ machine:
   features:
     # tuppr (infrastructure/tuppr) upgrades Talos and Kubernetes over the Talos
     # API from pods in system-upgrade; only that namespace gets the role. Talos
-    # allows this on control plane nodes only; homelab2 is reached through it.
+    # allows this on control plane nodes only, which all three are.
     kubernetesTalosAPIAccess:
       enabled: true
       allowedRoles:
@@ -59,7 +59,6 @@ labels:
 ---
 # Cilium (infrastructure/cilium) is the CNI, enforces the NetworkPolicies and
 # replaces kube-proxy, so Talos deploys neither its default CNI nor kube-proxy.
-# Both documents only exist on the control plane; the worker has nothing to drop.
 apiVersion: v1alpha1
 kind: KubeFlannelCNIConfig
 $patch: delete

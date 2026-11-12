@@ -1,5 +1,5 @@
-# The TrueNAS dataset pool1/k8s/static-disks/cam-records, exported to 10.0.0.150, .151
-# and .87 only.
+# The TrueNAS dataset pool1/k8s/static-disks/cam-records, exported to the nodes
+# (10.0.0.150-.152) and .87 only.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

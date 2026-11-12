@@ -1,4 +1,4 @@
-"""Frigate records the living room camera on either node and keeps 30 days of it."""
+"""Frigate records the living room camera on any node and keeps 30 days of it."""
 
 from functools import lru_cache
 import ipaddress
@@ -159,7 +159,7 @@ def test_frigate_runs_on_either_node_with_an_igpu():
     pod = spec["template"]["spec"]
     # The Service and the NetworkPolicy select app: frigate.
     assert spec["template"]["metadata"]["labels"]["app"] == "frigate"
-    # Both nodes have an Intel iGPU and the Cudy DNAT admits both.
+    # Every node has an Intel iGPU and the Cudy DNAT admits every node.
     assert "nodeSelector" not in pod
     assert "nodeAffinity" not in pod.get("affinity", {})
     frigate = frigate_container(pod)

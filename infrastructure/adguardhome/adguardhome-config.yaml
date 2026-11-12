@@ -169,14 +169,16 @@ user_rules:
   - "!- local config"
   - "speedport.ip^$client='local',dnstype=A,dnsrewrite=NOERROR;A;10.0.0.1"
 
-  # Cluster ingresses: Traefik answers every home.bariss.dev name on both
-  # nodes, so one wildcard per client group covers them all and no host
-  # name is listed here. A name without a route gets Traefik's 404. The
-  # Pi's names (Caddy) are left out with denyallow and answered below;
-  # matching dnsrewrite rules would otherwise add up to three addresses.
+  # Cluster ingresses: Traefik answers every home.bariss.dev name on every
+  # node, so one wildcard per client group covers them all and no host name
+  # is listed here. homelab3 has no Tailscale address yet, so Tailscale
+  # clients get homelab and homelab2 only. A name without a route gets
+  # Traefik's 404. The Pi's names (Caddy) are left out with denyallow and
+  # answered below; matching dnsrewrite rules would otherwise add up.
   - "!- cluster ingresses"
   - "||home.bariss.dev^$client='local',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;10.0.0.150"
   - "||home.bariss.dev^$client='local',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;10.0.0.151"
+  - "||home.bariss.dev^$client='local',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;10.0.0.152"
   - "||home.bariss.dev^$client='tailscale',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;{{ .tailscale_homelab }}"
   - "||home.bariss.dev^$client='tailscale',dnstype=A,denyallow=dns2.home.bariss.dev|nas.home.bariss.dev|router.home.bariss.dev|raspi.home.bariss.dev|ha.home.bariss.dev|vault.home.bariss.dev|cudy.home.bariss.dev,dnsrewrite=NOERROR;A;{{ .tailscale_homelab2 }}"
 

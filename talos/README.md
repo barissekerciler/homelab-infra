@@ -1,16 +1,16 @@
 # Talos
 
-homelab (10.0.0.150, control plane, also runs workloads) and homelab2
-(10.0.0.151, worker) run Talos Linux v1.14.5 with Kubernetes v1.36.6. The
+homelab (10.0.0.150), homelab2 (10.0.0.151) and homelab3 (10.0.0.152) are
+control planes that also run workloads, on Talos Linux v1.14.5 with Kubernetes v1.36.6. The
 nodes have no SSH and no package manager: `talosctl` configures them, and
 Flux builds everything else from Git (`docs/gitops.md`).
 
 | File | Content |
 | --- | --- |
 | `schematic.yaml` | Image Factory extensions: i915, intel-ucode, iscsi-tools, util-linux-tools, tailscale |
-| `patches/common.yaml` | Both nodes: inotify, user namespaces (Talos default 0), iSCSI disk timeout (udev), kubelet, nameservers, pod/service CIDRs, workload isolation off |
-| `patches/controlplane.yaml` | homelab: no control-plane taint, certSANs, privileged Pod Security default, no Talos CNI and no kube-proxy: Cilium replaces both (see [NetworkPolicies](#networkpolicies)) |
-| node patches | Hostname, install disk, static address by MAC, and homelab's Tailscale address in the certSANs. They are kept in the private tenant repository (`talos/nodes/`), not here |
+| `patches/common.yaml` | Every node: inotify, user namespaces (Talos default 0), iSCSI disk timeout (udev), kubelet, nameservers, pod/service CIDRs, workload isolation off |
+| `patches/controlplane.yaml` | Every node (all three are control planes): no control-plane taint, certSANs, privileged Pod Security default, no Talos CNI and no kube-proxy: Cilium replaces both (see [NetworkPolicies](#networkpolicies)) |
+| node patches | Hostname, install disk, static address by MAC, the node's address and name in the certSANs, and homelab's Tailscale address there too. They are kept in the private tenant repository (`talos/nodes/`), not here |
 | `patches/tailscale.yaml` | Tailscale extension settings (no auth key, see below) |
 
 The `talosctl gen secrets` bundle (cluster CA, etcd, Kubernetes and OS keys, tokens)
@@ -54,9 +54,9 @@ talosctl gen config homelab https://10.0.0.150:6443 \
   --output $T/out
 NODES=<private checkout>/talos/nodes
 talosctl machineconfig patch $T/out/controlplane.yaml --patch @$NODES/homelab.yaml -o $T/out/homelab.yaml
-talosctl machineconfig patch $T/out/worker.yaml --patch @$NODES/homelab2.yaml -o $T/out/homelab2.yaml
-talosctl validate --mode metal --config $T/out/homelab.yaml
-talosctl validate --mode metal --config $T/out/homelab2.yaml
+talosctl machineconfig patch $T/out/controlplane.yaml --patch @$NODES/homelab2.yaml -o $T/out/homelab2.yaml
+talosctl machineconfig patch $T/out/controlplane.yaml --patch @$NODES/homelab3.yaml -o $T/out/homelab3.yaml
+for n in homelab homelab2 homelab3; do talosctl validate --mode metal --config $T/out/$n.yaml; done
 ```
 
 `$T/out/talosconfig` is the client config: copy it to `~/.talos/config`, then
@@ -103,12 +103,12 @@ What the policies in this repository depend on:
   address reaches the pod (Frigate's 8554 rule for the Pi, Traefik's client
   addresses).
 - Everything from the pod's own node passes: kubelet probes and any process or
-  host-network pod on that node, root or not. Host-network traffic from the
-  other node arrives as that node's address; it matches an ipBlock that covers
+  host-network pod on that node, root or not. Host-network traffic from
+  another node arrives as that node's address; it matches an ipBlock that covers
   it, never a pod or namespace selector.
 - It does not fail open. The eBPF programs stay in the kernel while an agent
   restarts and keep enforcing; a node without a running agent starts no new
-  pods. `kubectl -n kube-system get ds cilium` must show 2/2 ready.
+  pods. `kubectl -n kube-system get ds cilium` must show 3/3 ready.
 
 Check it with `./scripts/check-network-policies.sh`. It checks that the agents
 run, then, from a throwaway pod in claude-agents on each node in turn, it must
@@ -139,13 +139,13 @@ no Tailscale.
 1. Boot the node into maintenance mode from a USB stick with the ISO. Talos
    then runs in RAM and touches no disk. With the kernel argument
    `ip=10.0.0.150::10.0.0.1:255.255.255.0:homelab:<interface>:off:10.0.0.87:1.1.1.1`
-   (homelab2: `10.0.0.151`, `homelab2`; `<interface>` is `enx` plus the NIC's MAC
-   from the node patch) it comes up on its
-   own address; otherwise it takes one from DHCP.
+   (homelab2: `10.0.0.151`, `homelab2`; homelab3: `10.0.0.152`, `homelab3`;
+   `<interface>` is `enx` plus the NIC's MAC from the node patch) it comes up
+   on its own address; otherwise it takes one from DHCP.
 2. Check it: `talosctl -n <ip> -e <ip> get disks --insecure` and `get links
    --insecure`. homelab installs to `sda` (intecko 256 GB SATA), homelab2 to
-   `nvme0n1` (Samsung MZVLW256HEHP), and the link must have the MAC in the
-   node's patch.
+   `nvme0n1` (Samsung MZVLW256HEHP), homelab3 to `nvme0n1` (KIOXIA
+   KBG40ZNV256G), and the link must have the MAC in the node's patch.
 3. `talosctl apply-config --insecure -n <ip> -e <ip> --file $T/out/homelab.yaml`.
    This is the only step that erases anything: Talos wipes the install disk,
    installs, and reboots on its static address.
@@ -154,14 +154,25 @@ no Tailscale.
    `talosctl -n <node> services` (`ext-tailscale` and `ext-iscsid` Running).
 6. A new cluster only: bootstrap Flux as in `docs/gitops.md`.
 
+homelab3 is a ThinkCentre M710q: after an install its firmware may keep old
+boot entries ahead of "Talos Linux UKI" and boot the USB stick again. Put
+Talos first under Startup in the BIOS (F1).
+
+A change `apply-config` refuses, such as the machine type, needs the node's
+config wiped first. `talosctl -n <node> reset --system-labels-to-wipe STATE
+--reboot` drains the node, takes a control plane out of etcd and reboots it
+into maintenance mode on a DHCP address (find it by the MAC); step 3 then
+applies the new config without reinstalling. EPHEMERAL stays, and with it the
+Tailscale state. `kubectl uncordon <node>` once it is back.
+
 ## Tailscale
 
 The extension keeps its state in `/var/lib/tailscale` on the node's disk and
 logs in only when that state is missing (`TS_AUTH_ONCE`). The stored state
-(`tailscaled.state` and `profile-data/`) keeps both nodes' Tailscale names and
+(`tailscaled.state` and `profile-data/`) keeps the nodes' Tailscale names and
 addresses, so no auth key exists. AdGuard runs on homelab and binds to its LAN
-and Tailscale addresses; AdGuard's rewrite rules use both nodes' addresses (the
-Tailscale ones come from OpenBao), and homelab's node patch adds its Tailscale
+and Tailscale addresses; AdGuard's rewrite rules use the nodes'
+addresses (the Tailscale ones come from OpenBao; homelab3 has none yet), and homelab's node patch adds its Tailscale
 address to the certSANs.
 
 After a reinstall the state is gone: `talosctl -n <node> logs ext-tailscale`
@@ -181,14 +192,14 @@ and `upgrades/kubernetes.yaml` (KubernetesUpgrade) hold the target versions;
 Flux image automation (`flux-system-tuppr`) moves them to the newest patch of
 the current minor (Talos `~1.14` from `ghcr.io/siderolabs/talos`, Kubernetes
 `~1.36` from `ghcr.io/siderolabs/kubelet`) and pushes to main. tuppr then
-upgrades in its window (04:30-06:30 Europe/Berlin), one node at a time from the
-other node, only while every node is Ready and both `postgres` instances are
+upgrades in its window (04:30-06:30 Europe/Berlin), one node at a time from
+another node, only while every node is Ready and both `postgres` instances are
 ready (the primary's PDB blocks a drain until it can switch over). It keeps
 each node's Image Factory schematic, so the extensions come along. The kernel
 comes with Talos.
 
-A failed upgrade leaves its node cordoned, on the old version; homelab2 cannot
-hold homelab's pods, so most of them stay Pending until
+A failed upgrade leaves its node cordoned, on the old version; homelab2 and
+homelab3 cannot hold all of homelab's pods, so some stay Pending until
 `kubectl uncordon <node>`.
 
 - Status: `kubectl get talosupgrade,kubernetesupgrade`.
@@ -198,14 +209,16 @@ hold homelab's pods, so most of them stay Pending until
 - By hand, without tuppr:
 
 ```sh
+talosctl -n 10.0.0.152 upgrade --image factory.talos.dev/metal-installer/$ID:<version>
 talosctl -n 10.0.0.151 upgrade --image factory.talos.dev/metal-installer/$ID:<version>
 talosctl -n 10.0.0.150 upgrade --image factory.talos.dev/metal-installer/$ID:<version>
 talosctl -n 10.0.0.150 upgrade-k8s --to <1.36.x>
 ```
 
 Talos boots the new image and keeps the old one; `talosctl rollback` returns
-to it. homelab is the only control plane, so its upgrade takes the Kubernetes
-API away for a few minutes.
+to it. etcd and the API stay up while one control plane reboots; only
+clients that use homelab's address (kubectl, talosctl) lose it while homelab
+does.
 
 ## Without SSH
 

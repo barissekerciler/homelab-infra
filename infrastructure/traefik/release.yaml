@@ -23,7 +23,7 @@ spec:
     crds: CreateReplace
   values:
     # Talos has no ServiceLB. One Traefik pod per node takes 80/443/465/993
-    # as hostPorts, so every node address (LAN 10.0.0.150/.151 and the nodes'
+    # as hostPorts, so every node address (LAN 10.0.0.150-.152 and the nodes'
     # Tailscale addresses) answers itself, and Traefik sees the client's own
     # address. Cilium serves the hostPorts on the devices its release lists
     # (infrastructure/cilium). cloudflared reaches it through the ClusterIP

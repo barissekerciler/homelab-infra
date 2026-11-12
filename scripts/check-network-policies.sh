@@ -4,8 +4,8 @@
 # Cilium enforces them. The script first checks that its agent runs on every
 # node, then starts a throwaway pod in claude-agents, which has the Claude Code
 # box's egress policy, on each node in turn and tries every target below from
-# it: Cilium treats the pod's own node (host) and the other node (remote-node)
-# differently, so both must pass. Blocked means the TCP connect timed out (the
+# it: Cilium treats the pod's own node (host) and the other nodes (remote-node)
+# differently, so every node must pass. Blocked means the TCP connect timed out (the
 # policy drops the SYN); a refused connect or any answer means it got through.
 # Exits 1 when the agent is missing, a forbidden target is reachable or an
 # allowed one is not.

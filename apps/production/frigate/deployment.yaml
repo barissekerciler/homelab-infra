@@ -92,8 +92,8 @@ spec:
             - name: http
               containerPort: 8971
             # go2rtc's RTSP restream, for Home Assistant at
-            # rtsp://cam.home.bariss.dev:8554, which lists both nodes: the node
-            # without Frigate refuses at once, so HA tries the other. The host
+            # rtsp://cam.home.bariss.dev:8554, which lists the nodes: those
+            # without Frigate refuse at once, so HA tries the next. The host
             # port keeps the Pi's address for the NetworkPolicy.
             - name: rtsp
               containerPort: 8554
