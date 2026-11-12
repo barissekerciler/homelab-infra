@@ -9,19 +9,17 @@ data:
   requeue.py: |
     #!/usr/bin/env python3
     import datetime as dt
+    import http.cookiejar
     import json
     import os
-    import sqlite3
     import sys
     import time
     import urllib.error
     import urllib.parse
     import urllib.request
-    import xml.etree.ElementTree as ET
 
     SONARR_URL = os.environ.get("SONARR_URL", "http://sonarr.media.svc.cluster.local:8989").rstrip("/")
-    SONARR_CONFIG = os.environ.get("SONARR_CONFIG", "/sonarr-config/config.xml")
-    DB_PATH = os.environ.get("RDT_DB", "/rdt-db/rdtclient.db")
+    RDT_URL = os.environ.get("RDT_URL", "http://rdt.media.svc.cluster.local:6500").rstrip("/")
     STALLED_MINUTES = int(os.environ.get("STALLED_MINUTES", "10"))
     MAX_PER_RUN = int(os.environ.get("MAX_PER_RUN", "3"))
     SONARR_RETRIES = int(os.environ.get("SONARR_RETRIES", "3"))
@@ -35,10 +33,9 @@ data:
         print(f"{dt.datetime.now(dt.timezone.utc).isoformat()} {message}", flush=True)
 
     def api_key():
-        root = ET.parse(SONARR_CONFIG).getroot()
-        key = root.findtext("ApiKey")
+        key = os.environ.get("SONARR_API_KEY")
         if not key:
-            raise RuntimeError(f"ApiKey not found in {SONARR_CONFIG}")
+            raise RuntimeError("SONARR_API_KEY is not set")
         return key
 
     def parse_rdt_time(value):
@@ -80,43 +77,37 @@ data:
                 log(f"sonarr-unavailable attempt={attempt}/{SONARR_RETRIES} error={exc}; retrying")
                 time.sleep(SONARR_RETRY_SECONDS)
 
-    def connect_db():
-        try:
-            return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=10)
-        except sqlite3.OperationalError:
-            return sqlite3.connect(f"file:{DB_PATH}?mode=ro&immutable=1", uri=True, timeout=10)
+    def rdt_torrents():
+        # rdt's own API (the qBittorrent one hides RdStatusRaw), with the
+        # login Sonarr uses for its download client.
+        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        login = json.dumps({"userName": os.environ["RDT_USERNAME"], "password": os.environ["RDT_PASSWORD"]}).encode("utf-8")
+        opener.open(urllib.request.Request(f"{RDT_URL}/Api/Authentication/Login", data=login,
+                                           headers={"Content-Type": "application/json"}, method="POST"), timeout=30).read()
+        with opener.open(f"{RDT_URL}/Api/Torrents", timeout=60) as resp:
+            torrents = json.loads(resp.read().decode("utf-8"))
+        # ASP.NET writes camelCase; take PascalCase too.
+        return [{k[:1].upper() + k[1:]: v for k, v in t.items()} for t in torrents]
 
-    def stalled_torrents():
+    def stalled_torrents(torrents):
         cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=STALLED_MINUTES)
-        conn = connect_db()
-        conn.row_factory = sqlite3.Row
-        try:
-            rows = conn.execute(
-                """
-                SELECT Hash, RdName, RdStatusRaw, RdProgress, RdSeeders, RdSize, RdSpeed, RdAdded, Added, Error
-                FROM Torrents
-                WHERE Category = 'tv-sonarr'
-                  AND (
-                    (
-                      COALESCE(Completed, '') = ''
-                      AND COALESCE(Error, '') = ''
-                      AND lower(COALESCE(RdStatusRaw, '')) LIKE 'stalled%'
-                    )
-                    OR lower(COALESCE(Error, '')) LIKE '%torrent lifetime%'
-                  )
-                ORDER BY Added ASC
-                """
-            ).fetchall()
-        finally:
-            conn.close()
+        rows = []
+        for t in torrents:
+            error = str(t.get("Error") or "")
+            status = str(t.get("RdStatusRaw") or "").lower()
+            if t.get("Category") != "tv-sonarr":
+                continue
+            if (not t.get("Completed") and not error and status.startswith("stalled")) or "torrent lifetime" in error.lower():
+                rows.append(t)
+        rows.sort(key=lambda t: parse_rdt_time(t.get("Added")) or dt.datetime.max.replace(tzinfo=dt.timezone.utc))
 
         stale = []
         for row in rows:
-            age_source = parse_rdt_time(row["RdAdded"]) or parse_rdt_time(row["Added"])
+            age_source = parse_rdt_time(row.get("RdAdded")) or parse_rdt_time(row.get("Added"))
             if age_source and age_source > cutoff:
-                log(f"skip-new hash={row['Hash']} name={row['RdName']} state={row['RdStatusRaw']}")
+                log(f"skip-new hash={row.get('Hash')} name={row.get('RdName')} state={row.get('RdStatusRaw')}")
                 continue
-            stale.append(dict(row))
+            stale.append(row)
         return stale
 
     def queue_text(item):
@@ -186,7 +177,11 @@ data:
             return 0
         records = queue.get("records", []) if isinstance(queue, dict) else []
 
-        stalled = stalled_torrents()
+        try:
+            stalled = stalled_torrents(rdt_torrents())
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+            log(f"rdt-unavailable error={exc}; queue warnings only")
+            stalled = []
         queue_by_hash = {str(item.get("downloadId", "")).lower(): item for item in records}
         queue_stalled = stalled_queue_items(records)
 

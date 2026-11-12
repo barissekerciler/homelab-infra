@@ -7,7 +7,6 @@ import subprocess
 
 import pytest
 import yaml
-from private_values import need
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -130,7 +129,7 @@ def test_helm_components_have_bounded_cpu(values_file, key):
     assert_bounded(node.get("resources"), f"{values_file}: {key or 'root'}")
 
 
-def test_media_is_not_pinned_and_sonarr_rdt_share_their_rwo_volumes_node():
+def test_media_is_not_pinned_or_bound_to_another_pods_node():
     # Both nodes mount NFS; the scheduler places media on either one.
     result = subprocess.run(
         ["kustomize", "build", "apps/production/media"], cwd=ROOT,
@@ -146,14 +145,12 @@ def test_media_is_not_pinned_and_sonarr_rdt_share_their_rwo_volumes_node():
     # seerr's RWO volume detaches before the new pod starts.
     assert rows["seerr"]["spec"]["strategy"] == {
         "type": "RollingUpdate", "rollingUpdate": {"maxSurge": 0, "maxUnavailable": 1}}
-    # sonarr-stalled-requeue mounts sonarr's and rdt's RWO config volumes.
-    group = {f"homelab.{need('DOMAIN')}/volume-group": "sonarr-rdt"}
-    together = [{"labelSelector": {"matchLabels": group}, "topologyKey": "kubernetes.io/hostname"}]
-    for name in ("sonarr", "rdt"):
-        assert group.items() <= rows[name]["spec"]["template"]["metadata"]["labels"].items(), name
+    # sonarr-stalled-requeue talks to sonarr and rdt over HTTP, so nothing
+    # ties them to one node.
     for name in ("sonarr", "rdt", "sonarr-stalled-requeue"):
         assert not spec(name).get("nodeSelector"), name
-        assert spec(name)["affinity"]["podAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"] == together, name
+        assert "podAffinity" not in spec(name).get("affinity", {}), name
+    assert not any("persistentVolumeClaim" in v for v in spec("sonarr-stalled-requeue").get("volumes", []))
 
 
 @pytest.mark.parametrize("driver", ["iscsi", "nfs"])

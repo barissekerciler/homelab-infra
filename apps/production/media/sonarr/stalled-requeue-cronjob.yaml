@@ -22,14 +22,6 @@ spec:
             component: stalled-requeue
         spec:
           restartPolicy: Never
-          # sonarr's and rdt's RWO config volumes are attached where they run.
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      homelab.bariss.dev/volume-group: sonarr-rdt
-                  topologyKey: kubernetes.io/hostname
           containers:
             - name: requeue
               image: python:3.15-alpine
@@ -40,24 +32,19 @@ spec:
               env:
                 - name: SONARR_URL
                   value: http://sonarr.media.svc.cluster.local:8989
-                - name: SONARR_CONFIG
-                  value: /sonarr-config/config.xml
-                - name: RDT_DB
-                  value: /rdt-db/rdtclient.db
+                - name: RDT_URL
+                  value: http://rdt.media.svc.cluster.local:6500
                 - name: STALLED_MINUTES
                   value: "10"
                 - name: MAX_PER_RUN
                   value: "3"
+              envFrom:
+                - secretRef:
+                    name: sonarr-stalled-requeue-secret
               volumeMounts:
                 - name: script
                   mountPath: /app/requeue.py
                   subPath: requeue.py
-                  readOnly: true
-                - name: sonarr-config
-                  mountPath: /sonarr-config
-                  readOnly: true
-                - name: rdt-db
-                  mountPath: /rdt-db
                   readOnly: true
               resources:
                 requests:
@@ -69,11 +56,3 @@ spec:
               configMap:
                 name: sonarr-stalled-requeue-script
                 defaultMode: 0555
-            - name: sonarr-config
-              persistentVolumeClaim:
-                claimName: sonarr-iscsi-config-pvc
-                readOnly: true
-            - name: rdt-db
-              persistentVolumeClaim:
-                claimName: rdt-config-pvc-iscsi
-                readOnly: true
