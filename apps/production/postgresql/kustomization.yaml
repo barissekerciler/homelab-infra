@@ -7,5 +7,6 @@ resources:
   - backup-copy.yaml
   - cnpg-backups-s3-secret.yaml
   - databases
+  - tuppr-rbac.yaml
 patches:
   - path: cluster.yaml

@@ -1,0 +1,23 @@
+# tuppr's health check reads the postgres Cluster before each node
+# (infrastructure/tuppr/upgrades/talos.yaml).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tuppr-health-check
+rules:
+  - apiGroups: [postgresql.cnpg.io]
+    resources: [clusters]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tuppr-health-check
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tuppr-health-check
+subjects:
+  - kind: ServiceAccount
+    name: tuppr
+    namespace: system-upgrade
