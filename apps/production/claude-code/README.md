@@ -39,6 +39,11 @@ Nothing listens, so there is no Service or Ingress.
   `~/homelab-claude-agent`, the SSH key `~/.ssh/id_ed25519` and anything installed under home.
   To keep an extra apt package after restarts, add it to `~/.apt-packages`.
 - Sessions start in `~/homelab-claude-agent` in the `auto` mode (`CLAUDE_PERMISSION_MODE`).
+- After a restart Remote Control reconnects the sessions it was serving, but
+  only within about four hours; after a longer outage they drop out of the
+  Claude app, and their transcripts stay in `~/.claude/projects`. The box runs
+  in the `claude-code` PriorityClass, so after a drain the scheduler evicts a
+  lower-priority pod on the other node rather than leave the box Pending.
 
 ## Sign in (once, and again when the login expires)
 

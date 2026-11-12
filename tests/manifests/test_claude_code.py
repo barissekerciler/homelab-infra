@@ -42,6 +42,14 @@ def test_home_is_an_iscsi_volume_and_the_scheduler_picks_the_node():
     assert one("Deployment", "claude-code")["spec"]["strategy"] == {"type": "Recreate"}
 
 
+def test_the_box_preempts_rather_than_waits():
+    # Remote Control reconnects its sessions only when it restarts within about four hours.
+    priority = one("PriorityClass", pod()["priorityClassName"])
+    assert priority["preemptionPolicy"] == "PreemptLowerPriority"
+    assert priority["globalDefault"] is False
+    assert priority["value"] > 0
+
+
 def test_nothing_listens():
     assert not [row for row in rendered() if row["kind"] in {"Service", "Ingress", "IngressRoute"}]
     policy = one("NetworkPolicy", "claude-code")

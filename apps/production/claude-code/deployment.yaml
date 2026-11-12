@@ -20,6 +20,7 @@ spec:
         app: claude-code
     spec:
       serviceAccountName: claude-code
+      priorityClassName: claude-code
       hostname: homelab-claude-agent
       enableServiceLinks: false
       terminationGracePeriodSeconds: 30
