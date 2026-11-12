@@ -14,6 +14,15 @@ spec:
       kind: Node
       expr: status.conditions.filter(c, c.type == "Ready").all(c, c.status == "True")
       description: every node Ready
+    # The primary's PDB lets a drain through only after a switchover, and that
+    # needs the other instance ready; without it Talos' drain times out and
+    # leaves the node cordoned.
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      name: postgres
+      namespace: postgresql
+      expr: has(status.readyInstances) && status.readyInstances == status.instances
+      description: both postgres instances ready
   # Nightly, after Jellyfin's 03:00 trickplay run. homelab is the only control
   # plane, so its reboot takes the Kubernetes API away for a few minutes.
   maintenance:

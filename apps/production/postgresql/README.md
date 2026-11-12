@@ -93,7 +93,9 @@ kubectl -n postgresql exec -it "$primary" -c postgres -- psql      # peer login 
 
 A drained node's primary is switched over to the other instance first (the
 operator's PodDisruptionBudgets), so tuppr's reboots move the primary instead
-of dropping it. A manual switchover:
+of dropping it. That needs the other instance ready; without it the PDB blocks
+the drain, so tuppr waits for both instances before each node. A manual
+switchover:
 
 ```sh
 kubectl -n postgresql patch cluster postgres --subresource=status --type=merge \

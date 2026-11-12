@@ -182,8 +182,14 @@ Flux image automation (`flux-system-tuppr`) moves them to the newest patch of
 the current minor (Talos `~1.14` from `ghcr.io/siderolabs/talos`, Kubernetes
 `~1.36` from `ghcr.io/siderolabs/kubelet`) and pushes to main. tuppr then
 upgrades in its window (04:30-06:30 Europe/Berlin), one node at a time from the
-other node, only while every node is Ready. It keeps each node's Image Factory
-schematic, so the extensions come along. The kernel comes with Talos.
+other node, only while every node is Ready and both `postgres` instances are
+ready (the primary's PDB blocks a drain until it can switch over). It keeps
+each node's Image Factory schematic, so the extensions come along. The kernel
+comes with Talos.
+
+A failed upgrade leaves its node cordoned, on the old version; homelab2 cannot
+hold homelab's pods, so most of them stay Pending until
+`kubectl uncordon <node>`.
 
 - Status: `kubectl get talosupgrade,kubernetesupgrade`.
 - New minor (Talos 1.15, Kubernetes 1.37): change the policy range and the
