@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: umami
-          image: ghcr.io/umami-software/umami:3.4.1 # {"$imagepolicy": "flux-system:umami"}
+          image: ghcr.io/umami-software/umami:3.5.0 # {"$imagepolicy": "flux-system:umami"}
           env:
             - name: DATABASE_URL
               valueFrom:
