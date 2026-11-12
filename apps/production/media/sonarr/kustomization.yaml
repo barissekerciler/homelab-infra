@@ -10,3 +10,4 @@ resources:
   - deployment.yaml
   - stalled-requeue-configmap.yaml
   - stalled-requeue-cronjob.yaml
+  - sonarr-stalled-requeue-secret.yaml

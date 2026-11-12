@@ -18,18 +18,7 @@ spec:
     metadata:
       labels:
         app: sonarr
-        homelab.bariss.dev/volume-group: sonarr-rdt
     spec:
-      affinity:
-        # sonarr-stalled-requeue mounts sonarr's and rdt's RWO config volumes,
-        # so sonarr, rdt and that CronJob share a node. The first of them
-        # to start may pick any node.
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  homelab.bariss.dev/volume-group: sonarr-rdt
-              topologyKey: kubernetes.io/hostname
       containers:
         - name: sonarr
           image: linuxserver/sonarr:latest@sha256:673dc4609a5672bc8e46069c86ffcea283a86b48d34a6c93d8da8c24a1b87571
