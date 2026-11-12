@@ -8,7 +8,7 @@ metadata:
   name: cluster
 spec:
   talos:
-    version: v1.14.5 # {"$imagepolicy": "flux-system:talos:tag"}
+    version: v1.14.6 # {"$imagepolicy": "flux-system:talos:tag"}
   healthChecks:
     - apiVersion: v1
       kind: Node
