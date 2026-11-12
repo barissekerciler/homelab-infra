@@ -176,8 +176,10 @@ addresses (the Tailscale ones come from OpenBao; homelab3 has none yet), and hom
 address to the certSANs.
 
 After a reinstall the state is gone: `talosctl -n <node> logs ext-tailscale`
-prints a login URL. Open it, then in the admin console delete the old machine,
-give the new one the old address and turn off its key expiry.
+prints a login URL. It is valid for one minute: the extension then restarts with
+a new key and prints a new URL, so open the newest one at once. Then in the admin
+console delete the old machine, give the new one the old address and turn off
+its key expiry.
 
 ## Rebuilding the cluster
 
