@@ -69,7 +69,7 @@ def test_grafana_host_resolves_on_lan_and_tailscale():
         assert resolve(home("grafana"), client) == CLUSTER[client]
 
 
-def test_rules_that_never_fit_two_nodes_are_off():
+def test_rules_that_never_fit_these_nodes_are_off():
     disabled = resource("HelmRelease", "kube-prometheus-stack")["spec"]["values"]["defaultRules"]["disabled"]
     assert {"KubeCPUOvercommit", "KubeMemoryOvercommit", "PrometheusNotConnectedToAlertmanagers"} <= set(disabled)
 

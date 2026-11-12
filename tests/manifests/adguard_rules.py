@@ -27,8 +27,8 @@ class _Answers:
         return {need(key) for key in self.keys[client]}
 
 
-# Traefik on both nodes.
-CLUSTER = _Answers(("HOMELAB_IP", "HOMELAB2_IP"), ("TAILSCALE_HOMELAB_IP", "TAILSCALE_HOMELAB2_IP"))
+# Traefik on every node; homelab3 has no Tailscale address yet.
+CLUSTER = _Answers(("HOMELAB_IP", "HOMELAB2_IP", "HOMELAB3_IP"), ("TAILSCALE_HOMELAB_IP", "TAILSCALE_HOMELAB2_IP"))
 # Caddy on the Pi.
 PI = _Answers(("PI_IP",), ("TAILSCALE_PI_IP",))
 

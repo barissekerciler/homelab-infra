@@ -27,7 +27,7 @@ A role and its database go next to the app that uses them. Tenants
 `postgresql` namespace and with the same password store.
 
 - Cluster `postgres`, namespace `postgresql`, two instances with required
-  anti-affinity: one on homelab, one on homelab2. Volumes: `freenas-iscsi-csi`,
+  anti-affinity: never two on the same node. Volumes: `freenas-iscsi-csi`,
   200Gi each, provisioned by the operator.
 - Image: tensorchord's `cloudnative-vectorchord` (PostgreSQL 17,
   VectorChord, pgvector) for Immich; `vchord` is preloaded.

@@ -1,6 +1,6 @@
 # homelab-infra
 
-GitOps configuration for my homelab: a two-node [Talos Linux](https://www.talos.dev/)
+GitOps configuration for my homelab: a three-node [Talos Linux](https://www.talos.dev/)
 Kubernetes cluster that [Flux](https://fluxcd.io/) builds from this repository,
 with storage on TrueNAS, secrets in OpenBao and nightly encrypted backups to a
 Hetzner Storage Box. Nothing is port-forwarded: public hosts go through a

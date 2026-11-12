@@ -1,6 +1,6 @@
 # Frigate: living room camera
 
-Frigate records the living room camera (Frigate name `living_room`) on either node (it prefers `homelab`). Every recording leaves the house within
+Frigate records the living room camera (Frigate name `living_room`) on any node (it prefers `homelab`). Every recording leaves the house within
 seconds, encrypted, to a Hetzner Storage Box, and a plain copy goes to the NAS.
 
 ## What runs where
@@ -8,14 +8,14 @@ seconds, encrypted, to a Hetzner Storage Box, and a plain copy goes to the NAS.
 | Piece | Where | What it does |
 |---|---|---|
 | Camera SP1 (eufy T8410) | Cudy IoT network, 10.1.0.174, powered by the Meross plug "Cam Socket" | RTSP, 1080p at 15 fps, no internet by default |
-| `frigate` container | Deployment `frigate`, either node | Reads the camera through the Cudy DNAT `10.0.0.224:8554`, detects people on the node's iGPU with YOLOv9-c (built at every new pod from the official weights by the `export-model` init container, a few minutes; the bundled SSDLite if that fails), keeps motion recordings and snapshots for 30 days in an emptyDir on the node's own disk. A new pod starts empty; the copies below keep the history. UI at `https://cam.home.bariss.dev` behind the GitHub sign-in. |
+| `frigate` container | Deployment `frigate`, any node | Reads the camera through the Cudy DNAT `10.0.0.224:8554`, detects people on the node's iGPU with YOLOv9-c (built at every new pod from the official weights by the `export-model` init container, a few minutes; the bundled SSDLite if that fails), keeps motion recordings and snapshots for 30 days in an emptyDir on the node's own disk. A new pod starts empty; the copies below keep the history. UI at `https://cam.home.bariss.dev` behind the GitHub sign-in. |
 | `uploader` sidecar | same pod | rclone: every 5 s the new files go through `crypt` to the Storage Box `frigate/data`; after each good run it writes `frigate/status/heartbeat` |
 | `nas-push` sidecar | same pod | rclone: every 5 s the new files go, as they are, to the NAS mirror over WebDAV |
-| `frigate-nas-mirror` | its own Deployment, either node | `rclone serve webdav` onto the NAS share over NFS; only the Frigate pod may connect; deletes files older than 30 days |
+| `frigate-nas-mirror` | its own Deployment, any node | `rclone serve webdav` onto the NAS share over NFS; only the Frigate pod may connect; deletes files older than 30 days |
 | `frigate-cleanup` | CronJob, 03:30 Europe/Berlin | Deletes off-site files older than 30 days |
 | Mosquitto | Pi 10.0.0.87:1883 | MQTT between Frigate and Home Assistant; user `frigate` may use only `frigate/#` |
 | Home Assistant | Pi (`packages/camera.yaml` in its config) | Arms (plug on, detection on) and disarms (plug off) through the UI presence automations and Good Night, sends the person alert with a photo, warns about stale uploads and a dark camera, and has the internet toggles. The "Camera" page shows the live view (`camera.living_room_camera`, with sound in the recordings, not in the live view); `require_admin` only hides it from the sidebar, any HA user can still open the camera. |
-| restream | host port `8554` behind `cam.home.bariss.dev` (both nodes; the one without Frigate refuses) | go2rtc's RTSP restream for Home Assistant's live view. go2rtc asks for the restream password and the NetworkPolicy lets only the Pi in. |
+| restream | host port `8554` behind `cam.home.bariss.dev` (every node; those without Frigate refuse) | go2rtc's RTSP restream for Home Assistant's live view. go2rtc asks for the restream password and the NetworkPolicy lets only the Pi in. |
 
 Secrets: `frigate-secrets` (camera RTSP, MQTT and the restream login) is for Frigate. `frigate-uploader-secrets` (the
 Storage Box key and the obscured crypt password and salt) is for the uploader and the cleanup

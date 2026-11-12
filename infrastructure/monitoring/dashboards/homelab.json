@@ -1001,6 +1001,28 @@
           "refId": "D",
           "range": false,
           "instant": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "1 - sum by (nodename) (rate(node_cpu_seconds_total{mode=~\"idle|iowait\",job=\"node-exporter\"}[5m]) * on (instance) group_left (nodename) max by (instance, nodename) (node_uname_info{nodename=\"homelab3\"})) / count by (nodename) (max by (nodename, cpu) (node_cpu_seconds_total{mode=\"idle\",job=\"node-exporter\"} * on (instance) group_left (nodename) max by (instance, nodename) (node_uname_info{nodename=\"homelab3\"})))",
+          "legendFormat": "homelab3 used",
+          "refId": "E",
+          "range": false,
+          "instant": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{phase=~\"Running|Pending\"}) == 1)) / sum by (node) (kube_node_status_allocatable{resource=\"cpu\",node=\"homelab3\"})",
+          "legendFormat": "homelab3 reserved",
+          "refId": "F",
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -1117,6 +1139,28 @@
           "refId": "D",
           "range": false,
           "instant": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (nodename) (1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"}) * on (instance) group_left (nodename) max by (instance, nodename) (node_uname_info{nodename=\"homelab3\"}))",
+          "legendFormat": "homelab3 used",
+          "refId": "E",
+          "range": false,
+          "instant": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{phase=~\"Running|Pending\"}) == 1)) / sum by (node) (kube_node_status_allocatable{resource=\"memory\",node=\"homelab3\"})",
+          "legendFormat": "homelab3 reserved",
+          "refId": "F",
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -1209,6 +1253,17 @@
           "expr": "max by (nodename) (1 - (node_filesystem_avail_bytes{mountpoint=\"/var\",job=\"node-exporter\"} / node_filesystem_size_bytes{mountpoint=\"/var\",job=\"node-exporter\"}) * on (instance) group_left (nodename) max by (instance, nodename) (node_uname_info{nodename=\"homelab2\"}))",
           "legendFormat": "homelab2",
           "refId": "B",
+          "range": false,
+          "instant": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (nodename) (1 - (node_filesystem_avail_bytes{mountpoint=\"/var\",job=\"node-exporter\"} / node_filesystem_size_bytes{mountpoint=\"/var\",job=\"node-exporter\"}) * on (instance) group_left (nodename) max by (instance, nodename) (node_uname_info{nodename=\"homelab3\"}))",
+          "legendFormat": "homelab3",
+          "refId": "C",
           "range": false,
           "instant": true
         }
@@ -1361,6 +1416,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "homelab3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#199e70"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1461,6 +1531,21 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#d95926"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "homelab3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#199e70"
                 }
               }
             ]
@@ -1588,6 +1673,46 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#d95926"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    6
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "homelab3 CPU"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#199e70"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "homelab3 NVMe"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#199e70"
                 }
               },
               {
@@ -1766,6 +1891,46 @@
           },
           {
             "matcher": {
+              "id": "byName",
+              "options": "homelab3 in"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#199e70"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "homelab3 out"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#199e70"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    6
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
               "id": "byRegexp",
               "options": ".* out"
             },
@@ -1873,6 +2038,21 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#d95926"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "homelab3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#199e70"
                 }
               }
             ]

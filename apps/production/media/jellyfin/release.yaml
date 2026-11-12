@@ -78,8 +78,9 @@ spec:
         mountPath: /config/transcodes
       - name: transcodes
         mountPath: /cache/transcodes
-    # Both nodes have the same i5-6500 iGPU (no 10-bit HEVC or AV1 decoding),
-    # so Jellyfin's hardware decoding settings hold on either node.
+    # homelab and homelab2 have an i5-6500 iGPU (no 10-bit HEVC or AV1
+    # decoding), homelab3 an i5-7500T (10-bit HEVC, no AV1). Jellyfin's
+    # hardware decoding settings follow the i5-6500, so they hold on any node.
     resources:
       requests:
         cpu: 50m

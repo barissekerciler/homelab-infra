@@ -13,7 +13,7 @@ here, within the memory rules in `limits.yaml`. Guards:
 - The ClusterSecretStore `openbao` does not serve this namespace or
   claude-code.
 - The egress NetworkPolicy: no NAS, camera, IoT network or apps that hold
-  private data. Both nodes' addresses are listed explicitly (API server,
+  private data. Every node's address is listed explicitly (API servers,
   AdGuard), because Cilium's `0.0.0.0/0` does not cover a pod's own node.
   Cilium enforces it (`talos/README.md`);
   `scripts/check-network-policies.sh` proves it with a throwaway pod here on

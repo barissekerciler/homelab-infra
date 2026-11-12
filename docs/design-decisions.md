@@ -3,14 +3,17 @@
 Things a review tends to flag, and why they are the way they are. How the
 pieces fit together: [Architecture and GitOps](gitops.md).
 
-- **One control plane.** `homelab` is the only control-plane node. If it goes
-  down, pods on `homelab2` keep running, but nothing is scheduled or changed
-  until it is back. Real HA needs three control planes for an etcd quorum; a
-  second one alone would make things worse, because losing either node would
-  then stop etcd. The spare machine I have draws too much power to run around
-  the clock, so the third node waits for a low-power one.
+- **Three control planes that also run workloads.** `homelab`, `homelab2` and
+  `homelab3` each run etcd and the API server, so the cluster keeps working
+  when any one of them is down. None carries the control-plane taint: three
+  small machines cannot spare one for the control plane alone.
+- **No VIP for the API.** The cluster endpoint is homelab's address
+  (`https://10.0.0.150:6443`). The nodes reach the API through KubePrism and
+  pods through the `kubernetes` Service, and both spread over all three API
+  servers; only kubectl, talosctl and a joining node use homelab's address.
+  With homelab down, point them at another node.
 - **The nodes hold no data.** Every volume is an iSCSI or NFS volume on
-  TrueNAS, pinned in Git, so any pod can run on either node and a node can be
+  TrueNAS, pinned in Git, so any pod can run on any node and a node can be
   reinstalled without losing anything. The NAS is therefore the one place the
   data lives; losing it is covered by the offsite copies
   ([Backups and disaster recovery](gitops.md#backups-and-disaster-recovery)).

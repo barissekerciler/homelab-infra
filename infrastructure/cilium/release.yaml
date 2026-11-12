@@ -59,7 +59,8 @@ spec:
     tunnelProtocol: vxlan
     # hostPorts and NodePorts answer on these devices' addresses. Traefik's
     # hostPorts must answer on the LAN NIC (eno1 on homelab, enp0s31f6 on
-    # homelab2) and on the nodes' Tailscale addresses (infrastructure/traefik).
+    # homelab2 and homelab3) and on the nodes' Tailscale addresses
+    # (infrastructure/traefik).
     devices:
       - en+
       - tailscale0
@@ -79,7 +80,7 @@ spec:
     # Cilium leaves node addresses out of NetworkPolicy ipBlocks by default;
     # in this mode an ipBlock naming a node address selects that node. Even
     # so, 0.0.0.0/0 does not select the pod's own node, so the claude-code and
-    # claude-agents egress rules list both nodes for the API server and
+    # claude-agents egress rules list every node for the API servers and
     # host-network pods (AdGuard).
     policyCIDRMatchMode:
       - nodes
