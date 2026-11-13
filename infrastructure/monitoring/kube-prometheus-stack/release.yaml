@@ -132,9 +132,10 @@ spec:
           podMetricsEndpoints:
             - port: http-metrics
       prometheusSpec:
-        # 35 days, so 30-day queries always have a full window (~0.43 GB/day).
-        retention: 35d
-        retentionSize: 27GB
+        # 65 days: two months of history, Home Assistant's included
+        # (~0.7 GB/day at 4,800 samples/s).
+        retention: 65d
+        retentionSize: 54GB
         # Pick up ServiceMonitors, PodMonitors, rules and probes from every namespace.
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
@@ -157,7 +158,7 @@ spec:
               resources:
                 requests:
                   # The operator does not resize the live claim: patch the PVC too.
-                  storage: 30Gi
+                  storage: 60Gi
     kube-state-metrics:
       resources:
         requests:

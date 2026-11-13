@@ -34,7 +34,7 @@ found something those explanations miss:
   descriptions. Nothing watches Grafana itself.
 - Grafana without a volume: datasources, dashboards and alerting come from
   Git; silences and alert state are lost on restart.
-- Prometheus keeps 35 days (at most 27 GB).
+- Prometheus keeps 65 days (at most 54 GB).
 - SeaweedFS as a TrueNAS app (`truenas/apps/seaweedfs`): an S3 staging area
   for CloudNativePG and OpenBao backups, publishing only S3. The backups are
   copied every night to `pool1/apps/db-dumps` and from there, encrypted, to a
