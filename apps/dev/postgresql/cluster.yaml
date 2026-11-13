@@ -6,5 +6,9 @@ spec:
   instances: 1
   # One instance: a PodDisruptionBudget would block every node drain (tuppr).
   enablePDB: false
+  resources:
+    requests:
+      cpu: 885m
+      memory: 1312Mi
   storage:
     size: 100Gi

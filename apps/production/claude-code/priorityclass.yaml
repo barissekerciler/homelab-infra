@@ -1,7 +1,8 @@
 # Remote Control reconnects the box's sessions only when it restarts within
-# about four hours. Memory requests on both nodes are nearly full, so after a
-# drain the box would wait for the other node; with this class the scheduler
-# evicts a lower-priority pod there instead. Cluster-scoped.
+# about four hours. When no node has room for the box (a node down or
+# drained), the scheduler evicts a lower-priority pod instead of leaving it
+# Pending; same value as homelab-critical (infrastructure/priority-classes).
+# Cluster-scoped.
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:

@@ -1,7 +1,7 @@
-# Memory requests on both nodes are nearly full, and the replica may only run
-# on the node without the primary (required anti-affinity). With this class
-# the scheduler evicts a lower-priority pod there instead of leaving the
-# replica Pending. Cluster-scoped.
+# The replica may only run on a node without the primary (required
+# anti-affinity). When those nodes have no room, the scheduler evicts a
+# lower-priority pod instead of leaving the replica Pending; same value as
+# homelab-critical (infrastructure/priority-classes). Cluster-scoped.
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:

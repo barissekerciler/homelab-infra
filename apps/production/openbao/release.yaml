@@ -38,6 +38,8 @@ spec:
       # The chart default (OnDelete) would leave a chart bump waiting for a
       # manual pod delete; the static seal unseals the new pod by itself.
       updateStrategyType: RollingUpdate
+      # Every Secret comes from it (infrastructure/priority-classes).
+      priorityClassName: homelab-critical
       resources:
         requests:
           cpu: 10m

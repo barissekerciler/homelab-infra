@@ -18,6 +18,8 @@ spec:
       labels:
         app: stalwart
     spec:
+      # The mail server (infrastructure/priority-classes).
+      priorityClassName: homelab-critical
       automountServiceAccountToken: false
       hostname: stalwart
       securityContext:
@@ -164,7 +166,7 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 128Mi
+              memory: 96Mi
             limits:
               cpu: "1"
               memory: 1Gi
