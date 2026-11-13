@@ -75,7 +75,7 @@ spec:
               key: github-webhook-secret
       resources:
         requests:
-          cpu: 100m
+          cpu: 20m
           memory: "1Gi"
         limits:
           cpu: "2"
@@ -100,6 +100,7 @@ spec:
           resources:
             requests:
               cpu: 10m
+              memory: 96Mi
             limits:
               cpu: 200m
     agent:

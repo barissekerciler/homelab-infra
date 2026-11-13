@@ -59,8 +59,11 @@ spec:
     server:
       controllers:
         main:
-          # No CPU request room on homelab for a surge pod, and thumbs is RWO.
+          # thumbs is RWO: a surge pod on another node waits on Multi-Attach.
           strategy: Recreate
+          # The photos (infrastructure/priority-classes).
+          pod:
+            priorityClassName: homelab-critical
           containers:
             main:
               image:
@@ -68,8 +71,8 @@ spec:
                 digest: sha256:e1981983b1c13f6024b57d72e7ecae3342eed1581201ab09fb248932d86c593a
               resources:
                 requests:
-                  cpu: 100m
-                  memory: 1536Mi
+                  cpu: 5m
+                  memory: 896Mi
                 limits:
                   cpu: "2"
                   # Each iPhone DNG thumbnail needs ~0.5Gi more while it decodes;
@@ -95,7 +98,7 @@ spec:
     machine-learning:
       controllers:
         main:
-          # The model cache is RWO: a surge pod on the other node waits on
+          # The model cache is RWO: a surge pod on another node waits on
           # Multi-Attach while the old pod holds the volume.
           strategy: Recreate
           containers:
@@ -128,11 +131,11 @@ spec:
                     failureThreshold: 30
               resources:
                 requests:
-                  cpu: 25m
-                  memory: 256Mi
+                  cpu: 5m
+                  memory: 2288Mi
                 limits:
                   cpu: "1"
-                  memory: 4Gi
+                  memory: 5632Mi
       defaultPodOptions:
         securityContext:
           runAsUser: 568

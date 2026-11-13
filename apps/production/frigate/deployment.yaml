@@ -99,8 +99,8 @@ spec:
               containerPort: 8554
               hostPort: 8554
               protocol: TCP
-          # The Intel device plugin adds the node's iGPU to the pod. Decoding
-          # and detection run there, and homelab's CPU requests are near full.
+          # The Intel device plugin adds the node's iGPU to the pod; decoding
+          # and detection run there.
           resources:
             requests:
               cpu: 300m
@@ -186,7 +186,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 64Mi
+              memory: 16Mi
             limits:
               cpu: 500m
               memory: 256Mi
@@ -236,8 +236,8 @@ spec:
             failureThreshold: 6
           resources:
             requests:
-              cpu: 75m
-              memory: 64Mi
+              cpu: 55m
+              memory: 16Mi
             limits:
               cpu: 500m
               memory: 256Mi

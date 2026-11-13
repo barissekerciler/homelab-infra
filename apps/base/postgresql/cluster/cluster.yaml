@@ -26,8 +26,7 @@ spec:
       timezone: Europe/Berlin
       log_timezone: Europe/Berlin
       max_connections: "200"
-      # homelab2 has 7 GB of RAM, and CloudNativePG wants the memory request
-      # to cover shared_buffers.
+      # CloudNativePG wants the memory request to cover shared_buffers.
       shared_buffers: 512MB
       effective_cache_size: 2GB
       maintenance_work_mem: 256MB
@@ -37,12 +36,12 @@ spec:
       checkpoint_timeout: 30min
       max_wal_size: 16GB
       wal_compression: zstd
-  # The request is low so an instance fits homelab2; the limit is what the
-  # primary may use.
+  # The requests follow the main cluster's typical use; the pantry sets its
+  # own (apps/dev/postgresql). The limit is what the primary may use.
   resources:
     requests:
-      cpu: 200m
-      memory: 512Mi
+      cpu: 60m
+      memory: 752Mi
     limits:
       cpu: "2"
       memory: 3Gi

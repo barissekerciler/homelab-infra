@@ -83,7 +83,7 @@ spec:
     # hardware decoding settings follow the i5-6500, so they hold on any node.
     resources:
       requests:
-        cpu: 50m
+        cpu: 5m
         memory: 384Mi
         gpu.intel.com/i915: "1"
       limits:

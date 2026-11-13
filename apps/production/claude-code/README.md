@@ -20,7 +20,7 @@ Nothing listens, so there is no Service or Ingress.
   places are blocked.
 - `job.sh` runs heavy work (duckdb, pandas, model fits, bulk downloads) in a
   pod of its own in claude-agents instead of in the box. The box has 4 GiB and
-  may run on homelab2, which has 7.5 GiB in all; one large job there would
+  may run on homelab2, which has 8 GB in all; one large job there would
   push the node into swap and stall every Remote Control session. The script copies the working
   directory in, runs the command with a memory limit, streams the log, copies
   the results back and deletes the pod.
@@ -43,7 +43,7 @@ Nothing listens, so there is no Service or Ingress.
   only within about four hours; after a longer outage they drop out of the
   Claude app, and their transcripts stay in `~/.claude/projects`. The box runs
   in the `claude-code` PriorityClass, so after a drain the scheduler evicts a
-  lower-priority pod on the other node rather than leave the box Pending.
+  lower-priority pod on another node rather than leave the box Pending.
 
 ## Sign in (once, and again when the login expires)
 

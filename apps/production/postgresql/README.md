@@ -37,8 +37,8 @@ A role and its database go next to the app that uses them. Tenants
 - The pantry: one instance (no PDB, so node drains are never blocked),
   `postgres-pantry-rw.postgresql.svc:5432`, 100Gi.
 - Settings for the NAS's HDD mirror: 30-minute checkpoints, `max_wal_size`
-  16GB, WAL compression. `shared_buffers` is 512MB and the memory request
-  512Mi so the replica fits on homelab2 (7 GB); the limit is 3Gi.
+  16GB, WAL compression. `shared_buffers` is 512MB, the memory request
+  752Mi (the pantry's 1312Mi) and the limit 3Gi.
 
 ## Roles, databases, passwords
 
@@ -105,7 +105,7 @@ kubectl -n postgresql patch cluster postgres --subresource=status --type=merge \
   -p '{"status":{"targetPrimary":"postgres-2","phase":"Switchover in progress","phaseReason":"manual"}}'
 ```
 
-Prefer the primary on homelab: homelab2 has 7 GB of RAM.
+Prefer the primary on homelab: homelab2 has 8 GB of RAM.
 
 ## Backups
 

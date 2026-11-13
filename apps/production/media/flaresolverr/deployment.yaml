@@ -29,10 +29,10 @@ spec:
               name: http
           resources:
             requests:
-              cpu: 200m
+              cpu: 125m
               memory: 384Mi
             limits:
               cpu: "1"
-              # Chromium sits near 0.4 GiB and rarely passes 1 GiB while it
-              # solves a challenge.
-              memory: 1Gi
+              # Chromium sits near 0.4 GiB and grows while it solves a
+              # challenge.
+              memory: 4608Mi
