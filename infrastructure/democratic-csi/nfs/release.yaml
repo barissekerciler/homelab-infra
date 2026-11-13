@@ -31,30 +31,35 @@ spec:
         resources:
           requests:
             cpu: 10m
+            memory: 80Mi
           limits:
             cpu: 500m
       externalAttacher:
         resources:
           requests:
             cpu: 5m
+            memory: 16Mi
           limits:
             cpu: 200m
       externalProvisioner:
         resources:
           requests:
             cpu: 5m
+            memory: 16Mi
           limits:
             cpu: 200m
       externalResizer:
         resources:
           requests:
             cpu: 5m
+            memory: 32Mi
           limits:
             cpu: 200m
       externalSnapshotter:
         resources:
           requests:
             cpu: 5m
+            memory: 16Mi
           limits:
             cpu: 200m
     node:
@@ -72,24 +77,28 @@ spec:
         resources:
           requests:
             cpu: 10m
+            memory: 80Mi
           limits:
             cpu: "1"
       driverRegistrar:
         resources:
           requests:
             cpu: 5m
+            memory: 16Mi
           limits:
             cpu: 100m
       cleanup:
         resources:
           requests:
             cpu: 5m
+            memory: 16Mi
           limits:
             cpu: 100m
     csiProxy:
       resources:
         requests:
           cpu: 5m
+          memory: 16Mi
         limits:
           cpu: 200m
     csiDriver:

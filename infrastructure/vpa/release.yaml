@@ -19,9 +19,9 @@ spec:
   interval: 1h0m0s
   values:
     admissionController:
-      # Off while the recommender learns: memory peaks are aggregated per day, so
-      # the first recommendations are too low to apply. Turn on after a few days
-      # of data; until then VPA only recommends.
+      # Off: the requests in Git come from measured use (docs/design-decisions.md).
+      # Turn it on once the recommender's targets match them; until then VPA
+      # only recommends (Goldilocks shows the targets).
       enabled: false
       replicas: 1
       podDisruptionBudget:
@@ -41,10 +41,21 @@ spec:
         # VPA's defaults (25m, 250 MB per pod) would raise most small pods.
         - --pod-recommendation-min-cpu-millicores=10
         - --pod-recommendation-min-memory-mb=32
+        # The same rule as the requests in Git: memory at the median of
+        # 5-minute peaks over 14 days, CPU at the 90th percentile, plus 10 %.
+        # VPA's defaults take daily peaks over 8 days, so every pod would get
+        # its peak as request.
+        - --memory-aggregation-interval=5m
+        - --memory-aggregation-interval-count=4032
+        - --memory-histogram-decay-half-life=168h
+        - --cpu-histogram-decay-half-life=168h
+        - --target-memory-percentile=0.5
+        - --target-cpu-percentile=0.9
+        - --recommendation-margin-fraction=0.1
       resources:
         requests:
           cpu: 20m
-          memory: 128Mi
+          memory: 64Mi
         limits:
           cpu: 500m
           memory: 512Mi

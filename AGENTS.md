@@ -88,8 +88,14 @@ of them.
   backups), a TrueNAS app outside the cluster (`truenas/apps/seaweedfs`)
 - `monitoring`: kube-prometheus-stack and Grafana; dashboards and alerting
   (Telegram) in Git
-- `vpa` + `goldilocks`: every Namespace gets VPA mode `Initial`
-  (`infrastructure/goldilocks/namespace-defaults`); requests in Git are starting values
+- `vpa` + `goldilocks`: every Namespace gets a VPA in mode `Initial`
+  (`infrastructure/goldilocks/namespace-defaults`); the recommender uses the
+  same rule as the requests in Git (memory median, CPU p90 over 14 days, plus
+  10 %), and its admission controller stays off until its targets match them
+- `priority-classes` (`infrastructure/priority-classes`): `homelab-critical`
+  (data, sign-in, public access; `postgres`, `frigate-camera` and
+  `claude-code` share its value) evicts others when there is no room,
+  `homelab-batch` (development) waits and goes first
 - `descheduler` (`infrastructure/descheduler`): an hourly CronJob that moves
   pods back to a node that returns nearly empty after a drain or reboot; it
   reads requests, as the scheduler does, and moves a pod at most once a day
