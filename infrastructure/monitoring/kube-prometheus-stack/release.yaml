@@ -143,11 +143,11 @@ spec:
         scrapeConfigSelectorNilUsesHelmValues: false
         resources:
           requests:
-            cpu: 100m
-            memory: 1Gi
+            cpu: 60m
+            memory: 640Mi
           limits:
             cpu: "1"
-            memory: 2Gi
+            memory: 3008Mi
         storageSpec:
           volumeClaimTemplate:
             spec:
@@ -165,7 +165,7 @@ spec:
           memory: 48Mi
         limits:
           cpu: 100m
-          memory: 128Mi
+          memory: 192Mi
     prometheus-node-exporter:
       # node-exporter runs on the host network: it listens on 127.0.0.1, and
       # kube-rbac-proxy holds 9100 with TLS and admits only tokens allowed to get

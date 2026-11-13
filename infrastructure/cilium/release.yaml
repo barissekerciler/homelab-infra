@@ -93,13 +93,13 @@ spec:
       ui:
         enabled: false
     rollOutCiliumPods: true
-    # kube-system has no VPA (infrastructure/goldilocks): these are estimates;
-    # check them against usage after a few days. No memory limit on the agent:
-    # an OOM kill would stop new pods from starting on its node.
+    # kube-system has no VPA (infrastructure/goldilocks): the agent's requests
+    # come from 14 days of its usage. No memory limit on the agent: an OOM
+    # kill would stop new pods from starting on its node.
     resources:
       requests:
-        cpu: 50m
-        memory: 192Mi
+        cpu: 80m
+        memory: 224Mi
       limits:
         cpu: "1"
     operator:

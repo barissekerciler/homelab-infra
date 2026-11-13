@@ -21,6 +21,12 @@ kind: KubeAPIServerConfig
 certExtraSANs:
   - 10.0.0.150
   - homelab
+# The scheduler counts the API server by its request: it typically uses
+# 0.6-1.5 GB per control plane (median over 14 days), Talos asks for 512Mi.
+resources:
+  requests:
+    cpu: 200m
+    memory: 1Gi
 ---
 apiVersion: v1alpha1
 kind: KubeControllerManagerConfig

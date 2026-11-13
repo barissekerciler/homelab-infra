@@ -3,8 +3,9 @@ kind: Kustomization
 resources:
 - gotk-components.yaml
 - gotk-sync.yaml
-# Requests sized from two days of usage on this cluster (p95 plus headroom);
-# the bootstrap defaults reserved 100m per controller. flux bootstrap keeps patches.
+# Requests sized from usage on this cluster (memory at the median plus 10 %,
+# CPU at the 90th percentile plus 10 %; docs/design-decisions.md); the
+# bootstrap defaults reserved 100m per controller. flux bootstrap keeps patches.
 patches:
 - target:
     kind: Deployment
@@ -12,21 +13,21 @@ patches:
   patch: |
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests
-      value: {cpu: 75m, memory: 128Mi}
+      value: {cpu: 75m, memory: 96Mi}
 - target:
     kind: Deployment
     name: image-reflector-controller
   patch: |
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests
-      value: {cpu: 50m, memory: 192Mi}
+      value: {cpu: 30m, memory: 96Mi}
 - target:
     kind: Deployment
     name: helm-controller
   patch: |
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests
-      value: {cpu: 20m, memory: 96Mi}
+      value: {cpu: 20m, memory: 48Mi}
 - target:
     kind: Deployment
     name: source-controller

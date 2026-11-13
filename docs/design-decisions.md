@@ -12,6 +12,23 @@ pieces fit together: [Architecture and GitOps](gitops.md).
   pods through the `kubernetes` Service, and both spread over all three API
   servers; only kubectl, talosctl and a joining node use homelab's address.
   With homelab down, point them at another node.
+- **The scheduler places every pod; requests come from measured use.** No
+  workload names, prefers or avoids a node (AdGuard's LAN address is the one
+  exception), and no node is tainted. The scheduler places pods by their
+  requests, so each request is what the container typically uses: memory at
+  the median over 14 days plus 10 %, CPU at the 90th percentile plus 10 %
+  (Prometheus). A container that spikes (its 95th percentile at least three
+  times its median and over 1 GiB) asks for its 95th percentile instead. Peaks
+  do not coincide, so the room the requests leave on every node absorbs them;
+  limits sit well above the observed peaks. The API servers' requests follow
+  the same rule (`talos/patches`). The requests add up to about two thirds of
+  the cluster's memory; with homelab down the two smaller nodes cannot hold
+  all of them, and PriorityClasses decide what waits
+  (`infrastructure/priority-classes`): data, sign-in, public access, the
+  camera and the Claude Code box (100000) evict others, the development
+  workloads (`homelab-batch`, -100) wait and go first. The VPA recommender
+  follows the median rule; its admission controller is off until its targets
+  match the requests in Git.
 - **The nodes hold no data.** Every volume is an iSCSI or NFS volume on
   TrueNAS, pinned in Git, so any pod can run on any node and a node can be
   reinstalled without losing anything. The NAS is therefore the one place the

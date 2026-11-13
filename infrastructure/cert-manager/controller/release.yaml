@@ -19,7 +19,7 @@ spec:
     resources:
       limits:
         cpu: 50m
-        memory: 64Mi
+        memory: 128Mi
       requests:
         cpu: 10m
         memory: 32Mi
@@ -27,12 +27,14 @@ spec:
       resources:
         requests:
           cpu: 10m
+          memory: 48Mi
         limits:
           cpu: 250m
     webhook:
       resources:
         requests:
           cpu: 10m
+          memory: 32Mi
         limits:
           cpu: 250m
     startupapicheck:

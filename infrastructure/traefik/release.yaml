@@ -30,6 +30,8 @@ spec:
     # Service.
     deployment:
       kind: DaemonSet
+    # Every route goes through it (infrastructure/priority-classes).
+    priorityClassName: homelab-critical
     # A surge pod cannot start next to the old one: both want the same
     # hostPorts on the node. Replace one node's pod at a time instead.
     updateStrategy:
@@ -81,6 +83,7 @@ spec:
           default: true
     resources:
       requests:
-        cpu: 25m
+        cpu: 5m
+        memory: 64Mi
       limits:
         cpu: "1"

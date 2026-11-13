@@ -1,0 +1,23 @@
+# Who keeps running when the cluster is short of room, for example while a
+# node is down: the scheduler places pods by their requests and, when a pod
+# does not fit, evicts pods of a lower class to make room. Pods without a
+# class run at 0. Cluster-scoped.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: homelab-critical
+value: 100000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: Data, sign-in, public access and the camera; they evict other workloads to start.
+---
+# Development and build workloads: they wait for room instead of evicting
+# anything, and they are the first to go when a higher class needs room.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: homelab-batch
+value: -100
+preemptionPolicy: Never
+globalDefault: false
+description: Development and build workloads; they never evict others and go first.
