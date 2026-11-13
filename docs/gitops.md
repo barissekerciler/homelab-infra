@@ -317,8 +317,8 @@ delete them.
 
 `infrastructure/monitoring/` runs two HelmReleases in the `monitoring` namespace:
 
-- `kube-prometheus-stack`: Prometheus (35 days, at most 27 GB, on a 30 Gi
-  iSCSI volume, so 30-day queries always have a full window), the operator,
+- `kube-prometheus-stack`: Prometheus (65 days, at most 54 GB, on a 60 Gi
+  iSCSI volume, so two months of history are always there), the operator,
   kube-state-metrics and node-exporter. Alertmanager is off: Grafana Alerting
   sends the notifications, Prometheus' own alerts included (`alerting/`).
   Talos binds the controller

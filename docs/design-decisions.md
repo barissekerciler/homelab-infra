@@ -45,8 +45,8 @@ pieces fit together: [Architecture and GitOps](gitops.md).
   from Git on every start. Nothing in Grafana is state worth keeping; silences
   and the alerts' state are lost on restart, so an alert firing at the time
   sends once more.
-- **Prometheus keeps 35 days** (at most 27 GB on a 30 Gi iSCSI volume), so
-  30-day queries always have a full window.
+- **Prometheus keeps 65 days** (at most 54 GB on a 60 Gi iSCSI volume), so
+  two months of history, Home Assistant's included, are always there.
 - **Backups leave the cluster and the house.** SeaweedFS exists only because
   CloudNativePG's Barman Cloud plugin and OpenBao's snapshot agent write to S3,
   and it runs as a TrueNAS app, outside the cluster; MinIO's community edition
