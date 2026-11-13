@@ -9,7 +9,7 @@ metadata:
     pv.kubernetes.io/provisioned-by: org.democratic-csi.iscsi
 spec:
   capacity:
-    storage: 30Gi
+    storage: 60Gi
   accessModes:
   - ReadWriteOnce
   volumeMode: Filesystem
