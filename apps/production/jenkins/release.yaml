@@ -8,8 +8,8 @@ spec:
   chart:
     spec:
       chart: jenkins
-      # https://github.com/jenkinsci/helm-charts/blob/jenkins-5.11.0/charts/jenkins/values.yaml
-      version: 5.11.0
+      # https://github.com/jenkinsci/helm-charts/blob/jenkins-5.13.1/charts/jenkins/values.yaml
+      version: 5.13.1
       sourceRef:
         kind: HelmRepository
         name: jenkins

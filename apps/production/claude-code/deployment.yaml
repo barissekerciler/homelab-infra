@@ -27,7 +27,7 @@ spec:
       initContainers:
         # The home volume hides the image's /home/vscode; copy it in once.
         - name: seed-home
-          image: mcr.microsoft.com/devcontainers/python:3.2.6-3.13-trixie@sha256:5ea7e72d3c1beb6aefdfea8001483345c39af4898e22f2c543deb6a00802ede4
+          image: mcr.microsoft.com/devcontainers/python:3.3.3-3.13-trixie@sha256:3d68402c7f3eb28f3d75f8095e2d3ddbfbbd33c6e1ece9f9f5da61afed230ef6
           command:
             - sh
             - -c
@@ -50,7 +50,7 @@ spec:
               mountPath: /seed
       containers:
         - name: claude-code
-          image: mcr.microsoft.com/devcontainers/python:3.2.6-3.13-trixie@sha256:5ea7e72d3c1beb6aefdfea8001483345c39af4898e22f2c543deb6a00802ede4
+          image: mcr.microsoft.com/devcontainers/python:3.3.3-3.13-trixie@sha256:3d68402c7f3eb28f3d75f8095e2d3ddbfbbd33c6e1ece9f9f5da61afed230ef6
           command:
             - bash
             - /opt/box/start.sh

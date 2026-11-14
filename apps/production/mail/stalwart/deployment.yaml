@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: wireguard
-          image: lscr.io/linuxserver/wireguard:1.0.20260223-r0-ls126
+          image: lscr.io/linuxserver/wireguard:1.0.20260223-r0-ls130
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
