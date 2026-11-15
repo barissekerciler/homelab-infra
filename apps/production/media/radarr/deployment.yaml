@@ -75,4 +75,4 @@ spec:
             claimName: radarr-nfs-content-pvc
         - name: downloads
           persistentVolumeClaim:
-            claimName: rdt-downloads-pvc
+            claimName: media-downloads-pvc

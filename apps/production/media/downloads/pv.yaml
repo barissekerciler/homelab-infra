@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: media-downloads-pv
+  labels:
+    app: media-downloads
+spec:
+  capacity:
+    storage: 500Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: freenas-nfs-csi
+  nfs:
+    server: 10.0.0.203
+    path: /mnt/pool1/apps/media/downloads
+  mountOptions:
+    - noatime
+    - nodev
+    - noexec
+    - nosuid
+    - nfsvers=4.1
+    - nconnect=4

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-downloads-pvc
+spec:
+  storageClassName: freenas-nfs-csi
+  volumeName: media-downloads-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi

@@ -1,11 +1,8 @@
+# The download share Sonarr, Radarr and unpackerr import from (/downloads).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 commonAnnotations:
   kustomize.toolkit.fluxcd.io/prune: disabled
 resources:
-  - config-normalizer.yaml
   - pv.yaml
   - pvc.yaml
-  - deployment.yaml
-  - ingress.yaml
-  - service.yaml

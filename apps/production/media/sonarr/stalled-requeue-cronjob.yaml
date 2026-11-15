@@ -32,8 +32,6 @@ spec:
               env:
                 - name: SONARR_URL
                   value: http://sonarr.media.svc.cluster.local:8989
-                - name: RDT_URL
-                  value: http://rdt.media.svc.cluster.local:6500
                 - name: STALLED_MINUTES
                   value: "10"
                 - name: MAX_PER_RUN

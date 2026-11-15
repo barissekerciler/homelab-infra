@@ -1,4 +1,4 @@
-"""sonarr-stalled-requeue picks rdt's stalled and expired tv-sonarr torrents from rdt's API."""
+"""sonarr-stalled-requeue picks Sonarr's queue items that warn of a stalled download."""
 
 import datetime as dt
 from pathlib import Path
@@ -14,23 +14,22 @@ def script():
     return namespace
 
 
-def test_picks_old_stalled_and_expired_tv_torrents_only():
+def test_picks_old_stalled_queue_warnings_only():
     s = script()
     old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)).isoformat()
     new = dt.datetime.now(dt.timezone.utc).isoformat()
-    torrents = [
-        {"Hash": "a", "Category": "tv-sonarr", "RdStatusRaw": "stalled", "Error": None, "Completed": None, "Added": old},
-        {"Hash": "b", "Category": "tv-sonarr", "RdStatusRaw": "downloaded",
-         "Error": "Torrent lifetime of 360 minutes reached", "Completed": None, "Added": old},
-        {"Hash": "c", "Category": "tv-sonarr", "RdStatusRaw": "stalled", "Error": None, "Completed": None, "Added": new},
-        {"Hash": "d", "Category": "radarr", "RdStatusRaw": "stalled", "Error": None, "Completed": None, "Added": old},
-        {"Hash": "e", "Category": "tv-sonarr", "RdStatusRaw": "downloading", "Error": None, "Completed": None, "Added": old},
-        {"Hash": "f", "Category": "tv-sonarr", "RdStatusRaw": "stalled", "Error": None, "Completed": old, "Added": old},
+    stalled = [{"title": "The download is stalled with no connections", "messages": []}]
+    records = [
+        {"id": 1, "status": "warning", "statusMessages": stalled, "added": old},
+        {"id": 2, "status": "warning", "errorMessage": "qBittorrent is reporting an error", "added": old},
+        {"id": 3, "status": "warning", "statusMessages": stalled, "added": new},
+        {"id": 4, "status": "downloading", "statusMessages": stalled, "added": old},
+        {"id": 5, "status": "warning", "errorMessage": "Not enough free space", "added": old},
     ]
-    assert [t["Hash"] for t in s["stalled_torrents"](torrents)] == ["a", "b"]
+    assert [r["id"] for r in s["stalled_queue_items"](records)] == [1, 2]
 
 
-def test_reads_no_files():
+def test_talks_only_to_sonarr():
     text = yaml.safe_load(CONFIGMAP.read_text())["data"]["requeue.py"]
     assert "sqlite3" not in text and "config.xml" not in text
-    assert "/Api/Authentication/Login" in text and "/Api/Torrents" in text
+    assert "SONARR_URL" in text and "_URL" not in text.replace("SONARR_URL", "")

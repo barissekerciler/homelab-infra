@@ -5,7 +5,7 @@ resources:
   - namespace.yaml
   - flaresolverr
   - dispatcharr
-  - rdt
+  - downloads
   - sonarr
   - radarr
   - bazarr

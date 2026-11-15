@@ -89,4 +89,4 @@ spec:
       volumes:
         - name: downloads
           persistentVolumeClaim:
-            claimName: rdt-downloads-pvc
+            claimName: media-downloads-pvc

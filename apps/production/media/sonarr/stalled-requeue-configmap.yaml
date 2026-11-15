@@ -9,7 +9,6 @@ data:
   requeue.py: |
     #!/usr/bin/env python3
     import datetime as dt
-    import http.cookiejar
     import json
     import os
     import sys
@@ -19,7 +18,6 @@ data:
     import urllib.request
 
     SONARR_URL = os.environ.get("SONARR_URL", "http://sonarr.media.svc.cluster.local:8989").rstrip("/")
-    RDT_URL = os.environ.get("RDT_URL", "http://rdt.media.svc.cluster.local:6500").rstrip("/")
     STALLED_MINUTES = int(os.environ.get("STALLED_MINUTES", "10"))
     MAX_PER_RUN = int(os.environ.get("MAX_PER_RUN", "3"))
     SONARR_RETRIES = int(os.environ.get("SONARR_RETRIES", "3"))
@@ -38,7 +36,7 @@ data:
             raise RuntimeError("SONARR_API_KEY is not set")
         return key
 
-    def parse_rdt_time(value):
+    def parse_time(value):
         if not value:
             return None
         text = str(value).replace("Z", "+00:00")
@@ -77,39 +75,6 @@ data:
                 log(f"sonarr-unavailable attempt={attempt}/{SONARR_RETRIES} error={exc}; retrying")
                 time.sleep(SONARR_RETRY_SECONDS)
 
-    def rdt_torrents():
-        # rdt's own API (the qBittorrent one hides RdStatusRaw), with the
-        # login Sonarr uses for its download client.
-        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
-        login = json.dumps({"userName": os.environ["RDT_USERNAME"], "password": os.environ["RDT_PASSWORD"]}).encode("utf-8")
-        opener.open(urllib.request.Request(f"{RDT_URL}/Api/Authentication/Login", data=login,
-                                           headers={"Content-Type": "application/json"}, method="POST"), timeout=30).read()
-        with opener.open(f"{RDT_URL}/Api/Torrents", timeout=60) as resp:
-            torrents = json.loads(resp.read().decode("utf-8"))
-        # ASP.NET writes camelCase; take PascalCase too.
-        return [{k[:1].upper() + k[1:]: v for k, v in t.items()} for t in torrents]
-
-    def stalled_torrents(torrents):
-        cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=STALLED_MINUTES)
-        rows = []
-        for t in torrents:
-            error = str(t.get("Error") or "")
-            status = str(t.get("RdStatusRaw") or "").lower()
-            if t.get("Category") != "tv-sonarr":
-                continue
-            if (not t.get("Completed") and not error and status.startswith("stalled")) or "torrent lifetime" in error.lower():
-                rows.append(t)
-        rows.sort(key=lambda t: parse_rdt_time(t.get("Added")) or dt.datetime.max.replace(tzinfo=dt.timezone.utc))
-
-        stale = []
-        for row in rows:
-            age_source = parse_rdt_time(row.get("RdAdded")) or parse_rdt_time(row.get("Added"))
-            if age_source and age_source > cutoff:
-                log(f"skip-new hash={row.get('Hash')} name={row.get('RdName')} state={row.get('RdStatusRaw')}")
-                continue
-            stale.append(row)
-        return stale
-
     def queue_text(item):
         parts = [str(item.get("errorMessage") or "")]
         for message in item.get("statusMessages") or []:
@@ -134,7 +99,7 @@ data:
             if not is_stalled:
                 continue
 
-            age_source = parse_rdt_time(item.get("added"))
+            age_source = parse_time(item.get("added"))
             if age_source and age_source > cutoff:
                 log(f"skip-new-queue queueId={item.get('id')} title={item.get('title')} error={item.get('errorMessage')}")
                 continue
@@ -177,48 +142,17 @@ data:
             return 0
         records = queue.get("records", []) if isinstance(queue, dict) else []
 
-        try:
-            stalled = stalled_torrents(rdt_torrents())
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
-            log(f"rdt-unavailable error={exc}; queue warnings only")
-            stalled = []
-        queue_by_hash = {str(item.get("downloadId", "")).lower(): item for item in records}
         queue_stalled = stalled_queue_items(records)
 
-        if not stalled and not queue_stalled:
-            log("no stalled tv-sonarr torrents or queue warnings")
+        if not queue_stalled:
+            log("no stalled queue items")
             return 0
 
         handled = 0
-        handled_queue_ids = set()
-        for torrent in stalled:
-            if handled >= MAX_PER_RUN:
-                log(f"max-per-run reached ({MAX_PER_RUN})")
-                break
-
-            torrent_hash = str(torrent.get("Hash", "")).lower()
-            item = queue_by_hash.get(torrent_hash)
-            if not item:
-                log(f"skip-not-in-sonarr-queue hash={torrent_hash} name={torrent.get('RdName')}")
-                continue
-
-            try:
-                if requeue_item(item, key, f"rdt-stalled hash={torrent_hash}"):
-                    handled += 1
-                    handled_queue_ids.add(item.get("id"))
-            except urllib.error.HTTPError as exc:
-                body = exc.read().decode("utf-8", "replace")[:500]
-                log(f"sonarr-error status={exc.code} queueId={item.get('id')} body={body}")
-            except Exception as exc:
-                log(f"error queueId={item.get('id')} hash={torrent_hash}: {exc}")
-
         for item in queue_stalled:
             if handled >= MAX_PER_RUN:
                 log(f"max-per-run reached ({MAX_PER_RUN})")
                 break
-            if item.get("id") in handled_queue_ids:
-                continue
-
             try:
                 if requeue_item(item, key, f"queue-stalled error={item.get('errorMessage')}"):
                     handled += 1
@@ -228,7 +162,7 @@ data:
             except Exception as exc:
                 log(f"error queueId={item.get('id')}: {exc}")
 
-        log(f"handled={handled} stalled_seen={len(stalled)} queue_stalled_seen={len(queue_stalled)}")
+        log(f"handled={handled} queue_stalled_seen={len(queue_stalled)}")
         return 0
 
     if __name__ == "__main__":
