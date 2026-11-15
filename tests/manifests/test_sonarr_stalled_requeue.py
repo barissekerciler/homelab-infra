@@ -21,7 +21,7 @@ def test_picks_old_stalled_queue_warnings_only():
     stalled = [{"title": "The download is stalled with no connections", "messages": []}]
     records = [
         {"id": 1, "status": "warning", "statusMessages": stalled, "added": old},
-        {"id": 2, "status": "warning", "errorMessage": "qBittorrent is reporting an error", "added": old},
+        {"id": 2, "status": "warning", "errorMessage": "Download client is reporting an error", "added": old},
         {"id": 3, "status": "warning", "statusMessages": stalled, "added": new},
         {"id": 4, "status": "downloading", "statusMessages": stalled, "added": old},
         {"id": 5, "status": "warning", "errorMessage": "Not enough free space", "added": old},

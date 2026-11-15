@@ -93,7 +93,7 @@ data:
                 and (
                     "stalled" in text
                     or "no connections" in text
-                    or "qbittorrent is reporting an error" in text
+                    or "is reporting an error" in text
                 )
             )
             if not is_stalled:
