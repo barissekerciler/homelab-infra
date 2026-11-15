@@ -7,6 +7,10 @@ machine:
     fs.inotify.max_user_watches: "1048576"
     # Talos turns user namespaces off (0). Jenkins builds and tests need them.
     user.max_user_namespaces: "11255"
+    # Fallback tunnel devices (tunl0, sit0, ip6tnl0, gre0, ...) only in the
+    # host's network namespace: pods do not use them, and a namespace a pod
+    # creates holds only the interfaces it puts there.
+    net.core.fb_tunnels_only_for_init_net: "1"
   udev:
     rules:
       # 360 s SCSI command timeout on TrueNAS iSCSI disks, so commands in
