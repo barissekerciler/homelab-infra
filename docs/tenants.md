@@ -34,6 +34,8 @@ tenants/homelab-private/
   the tenant's objects as the tenant's ServiceAccount, not as itself, and
   depends on the platform Kustomization whose services it uses (`prod`, `dev`).
 - The ServiceAccount and its RBAC (`rbac.yaml`).
+- A Jenkins job that runs the repository's `Jenkinsfile` (Job DSL in
+  `apps/production/jenkins/jcasc.yaml`, with the GitHub App's credentials).
 
 The Flux Kustomization `tenants` (`clusters/homelab/tenants.yaml`) applies
 `tenants/` after `infrastructure`, so the External Secrets Operator and its

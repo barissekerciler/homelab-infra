@@ -72,7 +72,8 @@ of them.
   (`flux_resource_info`), without a FluxInstance or its Web UI
 - `oauth2-proxy` (`infrastructure/oauth2-proxy/home-bariss-dev`): GitHub
   sign-in in front of the admin UIs, all through `auth.home.bariss.dev`
-- `jenkins`: CI, including this repository's checks (`Jenkinsfile`)
+- `jenkins`: CI, including this repository's checks (`Jenkinsfile`) and the
+  tenant's job (`homelab-private`)
 - `cilium`: CNI (VXLAN, WireGuard between the nodes), kube-proxy replacement
   and NetworkPolicy enforcement; hostPorts answer on the LAN NIC and
   `tailscale0` (`talos/README.md`)

@@ -417,6 +417,10 @@ the rendered diff. The result goes back to GitHub as a commit status. Pull
 requests from forks are never built: the repository is public, and a fork's
 Jenkinsfile would run in the cluster. The pod has no ServiceAccount token.
 
+The tenant `homelab-private` has its own job beside it, defined the same way:
+it runs that repository's `Jenkinsfile`, its checks on every branch and its
+image builds on `main`.
+
 ## Backups and disaster recovery
 
 The cluster's state is in Git, and its data is on TrueNAS: every app volume is

@@ -69,6 +69,51 @@ jobs:
           }
         }
       }
+  # The tenant repository homelab-private (docs/tenants.md), the same way: its
+  # Jenkinsfile runs its checks and, on main, builds its images. The repository
+  # is private and has no forks.
+  - script: |
+      multibranchPipelineJob('homelab-private') {
+        description('Checks and image builds for the tenant homelab-private (its Jenkinsfile). Defined in Git: apps/production/jenkins/jcasc.yaml.')
+        branchSources {
+          branchSource {
+            source {
+              github {
+                id('homelab-private')
+                apiUri('https://api.github.com')
+                credentialsId('github-app')
+                repoOwner('barissekerciler')
+                repository('homelab-private')
+                repositoryUrl('https://github.com/barissekerciler/homelab-private.git')
+                configuredByUrl(false)
+                traits {
+                  gitHubBranchDiscovery {
+                    strategyId(1)
+                  }
+                  gitHubPullRequestDiscovery {
+                    strategyId(1)
+                  }
+                }
+              }
+            }
+          }
+        }
+        orphanedItemStrategy {
+          discardOldItems {
+            numToKeep(20)
+          }
+        }
+        triggers {
+          periodicFolderTrigger {
+            interval('1d')
+          }
+        }
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }
 appearance:
   themeManager:
     disableUserThemes: false
