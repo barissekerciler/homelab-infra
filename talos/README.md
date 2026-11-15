@@ -8,7 +8,7 @@ Flux builds everything else from Git (`docs/gitops.md`).
 | File | Content |
 | --- | --- |
 | `schematic.yaml` | Image Factory extensions: i915, intel-ucode, iscsi-tools, util-linux-tools, tailscale |
-| `patches/common.yaml` | Every node: inotify, user namespaces (Talos default 0), iSCSI disk timeout (udev), kubelet, nameservers, pod/service CIDRs, workload isolation off |
+| `patches/common.yaml` | Every node: inotify, user namespaces (Talos default 0), iSCSI disk timeout (udev), kubelet (1.5 GiB reserved for etcd and the Talos services), nameservers, pod/service CIDRs, workload isolation off |
 | `patches/controlplane.yaml` | Every node (all three are control planes): no control-plane taint, certSANs, privileged Pod Security default, no Talos CNI and no kube-proxy: Cilium replaces both (see [NetworkPolicies](#networkpolicies)) |
 | node patches | Hostname, install disk, static address by MAC, the node's address and name in the certSANs, and homelab's Tailscale address there too. They are kept in the private tenant repository (`talos/nodes/`), not here |
 | `patches/tailscale.yaml` | Tailscale extension settings (no auth key, see below) |
