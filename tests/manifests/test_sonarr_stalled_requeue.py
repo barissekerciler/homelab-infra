@@ -1,4 +1,4 @@
-"""sonarr-stalled-requeue picks Sonarr's queue items that warn of a stalled download."""
+"""sonarr-stalled-requeue picks Sonarr's queue items that warn of a stalled download or an executable."""
 
 import datetime as dt
 from pathlib import Path
@@ -27,6 +27,27 @@ def test_picks_old_stalled_queue_warnings_only():
         {"id": 5, "status": "warning", "errorMessage": "Not enough free space", "added": old},
     ]
     assert [r["id"] for r in s["stalled_queue_items"](records)] == [1, 2]
+
+
+def test_picks_programs_and_empty_downloads_at_once():
+    s = script()
+    new = dt.datetime.now(dt.timezone.utc).isoformat()
+    exe = [{"title": "Show S01E01", "messages": ["Caution: Found executable file with extension: '.exe'"]}]
+    other = [{"title": "Show S01E02", "messages": ["No files found are eligible for import"]}]
+    path = "/downloads/tv-sonarr/Show S01E03 1080p WEB H264-GRP"
+    records = [
+        {"id": 1, "status": "completed", "trackedDownloadStatus": "warning", "statusMessages": exe,
+         "outputPath": path, "size": 5, "added": new},
+        {"id": 2, "status": "completed", "trackedDownloadStatus": "warning", "statusMessages": other,
+         "outputPath": path, "size": 5, "added": new},
+        {"id": 3, "status": "completed", "trackedDownloadStatus": "ok", "outputPath": f"{path}.mkv",
+         "size": 5, "added": new},
+        {"id": 4, "status": "downloading", "outputPath": f"{path}.EXE", "size": 5, "added": new},
+        {"id": 5, "status": "completed", "outputPath": f"{path}.bin", "size": 0, "added": new},
+        {"id": 6, "status": "completed", "outputPath": path, "size": 0, "added": new},
+        {"id": 7, "status": "queued", "outputPath": path, "size": 0, "added": new},
+    ]
+    assert [r["id"] for r in s["executable_queue_items"](records)] == [1, 4, 5, 6]
 
 
 def test_talks_only_to_sonarr():

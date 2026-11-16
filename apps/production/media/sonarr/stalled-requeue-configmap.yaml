@@ -106,6 +106,22 @@ data:
             stale.append(item)
         return stale
 
+    # Fake releases are often one program named like the episode. The download
+    # client skips such files, so the torrent finishes with nothing in it; if one
+    # gets through, Sonarr refuses the import and waits for a person.
+    EXECUTABLES = (
+        ".exe", ".scr", ".pif", ".bat", ".cmd", ".msi", ".ps1", ".vbs", ".vbe", ".js", ".jse",
+        ".wsf", ".hta", ".lnk", ".jar", ".apk", ".sh", ".bin", ".run", ".appimage",
+    )
+
+    def executable_queue_items(records):
+        return [
+            item for item in records
+            if str(item.get("outputPath") or "").lower().endswith(EXECUTABLES)
+            or "found executable file" in queue_text(item)
+            or (item.get("status") == "completed" and item.get("size") == 0)
+        ]
+
     def requeue_item(item, sonarr_key, reason):
         series = item.get("series") or {}
         episode = item.get("episode") or {}
@@ -142,19 +158,25 @@ data:
             return 0
         records = queue.get("records", []) if isinstance(queue, dict) else []
 
-        queue_stalled = stalled_queue_items(records)
+        queue_stalled = [(item, "queue-executable") for item in executable_queue_items(records)]
+        picked = {item.get("id") for item, _ in queue_stalled}
+        queue_stalled += [
+            (item, f"queue-stalled error={item.get('errorMessage')}")
+            for item in stalled_queue_items(records)
+            if item.get("id") not in picked
+        ]
 
         if not queue_stalled:
             log("no stalled queue items")
             return 0
 
         handled = 0
-        for item in queue_stalled:
+        for item, reason in queue_stalled:
             if handled >= MAX_PER_RUN:
                 log(f"max-per-run reached ({MAX_PER_RUN})")
                 break
             try:
-                if requeue_item(item, key, f"queue-stalled error={item.get('errorMessage')}"):
+                if requeue_item(item, key, reason):
                     handled += 1
             except urllib.error.HTTPError as exc:
                 body = exc.read().decode("utf-8", "replace")[:500]
