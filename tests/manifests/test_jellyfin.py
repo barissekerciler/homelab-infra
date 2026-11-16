@@ -1,6 +1,7 @@
 """Jellyfin runs the TrueNAS app's version on its copied config and the same library paths."""
 
 from pathlib import Path
+from xml.etree import ElementTree
 
 import yaml
 
@@ -44,6 +45,21 @@ def test_uses_quicksync_on_either_node():
     assert v["resources"]["limits"]["gpu.intel.com/i915"] == "1"
     # homelab's render group owns /dev/dri/renderD128.
     assert 993 in v["podSecurityContext"]["supplementalGroups"]
+
+
+def test_server_settings_come_from_git():
+    v = values()
+    init = {row["name"]: row for row in v["extraInitContainers"]}["copy-system-xml"]
+    assert init["command"][-1].endswith("cp /git/system.xml /config/config/system.xml")
+    source = {row["name"]: row for row in v["volumes"]}["system-xml"]["configMap"]["name"]
+    generators = yaml.safe_load((ROOT / "apps/production/media/jellyfin/kustomization.yaml").read_text())[
+        "configMapGenerator"]
+    assert {"name": source, "files": ["system.xml"], "options": {"disableNameSuffixHash": True}} in generators
+    assert v["deploymentAnnotations"]["reloader.stakater.com/auto"] == "true"
+    settings = ElementTree.parse(ROOT / "apps/production/media/jellyfin/system.xml").getroot()
+    # A stop in the end credits counts as watched; a player left paused is closed.
+    assert settings.findtext("MaxResumePct") == "85"
+    assert settings.findtext("InactiveSessionThreshold") == "15"
 
 
 def test_config_and_cache_are_retained_iscsi_claims():

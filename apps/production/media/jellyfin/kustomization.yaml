@@ -7,3 +7,9 @@ resources:
   - pvc.yaml
   - release.yaml
   - ingress.yaml
+configMapGenerator:
+  - name: jellyfin-system-xml
+    files:
+      - system.xml
+    options:
+      disableNameSuffixHash: true

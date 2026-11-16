@@ -2,8 +2,6 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: jellyfin
-  annotations:
-    reloader.stakater.com/auto: 'true'
 spec:
   releaseName: jellyfin
   chart:
@@ -26,6 +24,30 @@ spec:
     # One writer for the SQLite database on the RWO volume.
     deploymentStrategy:
       type: Recreate
+    # Restarts Jellyfin when system.xml changes in Git.
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+    # The server settings (system.xml beside this file) come from Git: every
+    # start copies them over the config volume's copy, so a setting changed in
+    # the dashboard returns to Git's value at the next restart.
+    extraInitContainers:
+      - name: copy-system-xml
+        image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+        command:
+          - sh
+          - -c
+          - mkdir -p /config/config && cp /git/system.xml /config/config/system.xml
+        volumeMounts:
+          - name: config
+            mountPath: /config
+          - name: system-xml
+            mountPath: /git
+            readOnly: true
+        resources:
+          requests:
+            cpu: 10m
+          limits:
+            cpu: 100m
     # TrueNAS's apps user (568) owns the library files. 993 is homelab's render
     # group.
     podSecurityContext:
@@ -61,6 +83,9 @@ spec:
           claimName: radarr-nfs-content-pvc
       - name: transcodes
         emptyDir: {}
+      - name: system-xml
+        configMap:
+          name: jellyfin-system-xml
       - name: dispatcharr-recordings
         persistentVolumeClaim:
           claimName: dispatcharr-recordings-pvc
