@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: redlib
-          image: ghcr.io/nachtalb/redlib:latest@sha256:5c21f4a7f2c6297af50f7f714bfa25a93748821da5cea8cfd350712fdc25a307 # {"$imagepolicy": "flux-system:redlib"}
+          image: ghcr.io/nachtalb/redlib:latest@sha256:6c7b3312f7c601245171898235bb1daf5c3caad800db394da9b10811e81943b5 # {"$imagepolicy": "flux-system:redlib"}
           env:
             - name: REDLIB_SFW_ONLY
               value: "off"
