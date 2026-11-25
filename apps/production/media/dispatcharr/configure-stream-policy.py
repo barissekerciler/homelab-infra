@@ -64,9 +64,11 @@ def plan_policy(channels, streams, links):
         if pk not in RAW_CHANNELS and not RAW_TOKEN.search(channel["name"]):
             continue
         rows = by_channel.get(pk, [])
+        # Only the verified channels pin a group: a provider group rename gives
+        # the sources a new group id while their channels keep the old one.
         own_raw = [r for r in rows if owned(streams.get(r["stream_id"]))
                    and RAW_TOKEN.search(streams[r["stream_id"]]["name"])
-                   and streams[r["stream_id"]]["channel_group_id"] == (7 if pk in RAW_CHANNELS else channel["channel_group_id"])]
+                   and (pk not in RAW_CHANNELS or streams[r["stream_id"]]["channel_group_id"] == 7)]
         if pk in RAW_CHANNELS:
             source_id, name = RAW_CHANNELS[pk]
             own_raw = [r for r in own_raw if r["stream_id"] == source_id and streams[source_id]["name"] == name]

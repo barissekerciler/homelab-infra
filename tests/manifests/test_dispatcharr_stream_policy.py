@@ -114,6 +114,14 @@ class StreamPolicyPlanTest(unittest.TestCase):
         self.assertEqual(second["restore_channels"], {})
         self.assertEqual(second["unresolved_channel_ids"], [])
 
+    def test_provider_group_rename_leaves_unlisted_raw_channel_resolved(self):
+        # A renamed provider group gets a new id: the source moves, the channel stays.
+        channels, streams, links = live_fixture()
+        next(s for s in streams if s["id"] == 2888)["channel_group_id"] = 121
+        plan = self.plan(channels, streams, links)
+        self.assertEqual(plan["unresolved_channel_ids"], [])
+        self.assertNotIn(31, plan["delete_link_ids"])
+
     def test_missing_own_raw_link_preserves_unknown_source(self):
         channels, streams, links = live_fixture()
         links = [r for r in links if r["id"] != 472]
