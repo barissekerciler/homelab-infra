@@ -8,13 +8,13 @@ spec:
   chart:
     spec:
       chart: traefik
-      version: "42.x"
+      version: "43.x"
       sourceRef:
         kind: HelmRepository
         name: traefik
         namespace: flux-system
   interval: 1h0m0s
-  # The chart's CRDs change between Traefik minors (v3.7); Helm skips them on
+  # The chart's CRDs change between Traefik minors; Helm skips them on
   # upgrade unless told otherwise.
   install:
     crds: CreateReplace
@@ -41,7 +41,7 @@ spec:
     service:
       enabled: true
       single: true
-      # Chart 42 takes the type from service.spec only; a top-level
+      # The chart takes the type from service.spec only; a top-level
       # service.type is ignored and the Service becomes a LoadBalancer with
       # NodePorts on every node address.
       spec:
