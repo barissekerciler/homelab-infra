@@ -86,9 +86,9 @@ flowchart TB
   with its own ServiceAccount, Git source and image automation
   ([tenants.md](tenants.md)).
 - **Upgrades**: Flux image automation and tuppr keep Talos and Kubernetes on the
-  latest patch release, and every other image on the newest release of its
-  major; chart versions are pinned and bumped in Git
-  ([Image automation](#image-automation)). Jenkins checks every branch and
+  latest patch release, every other image on the newest release of its
+  major, and Helm charts take every minor and patch of their major
+  ([Image automation](#image-automation), [Helm](#helm)). Jenkins checks every branch and
   pull request ([CI](#ci)).
 
 ## Flux
@@ -307,8 +307,15 @@ only the `democratic-csi` Kustomization decrypts.
 ## Helm
 
 Each Helm application keeps a `release.yaml` HelmRelease beside its other
-resources. Chart sources live in `infrastructure/sources/`. Charts are pinned
-to exact versions, and values stay inline in the HelmRelease.
+resources. Chart sources live in `infrastructure/sources/`, and values stay
+inline in the HelmRelease. `spec.chart.spec.version` is a range inside the
+chart's current major (`43.x`): Flux's source-controller installs each new
+minor and patch when it next checks the repository (hourly), and a new major
+is a manual change of the range after reading the chart's upgrade notes. 0.x
+charts have no stable major, so each one takes either patches only (`0.N.x`)
+or every 0.x release (`0.x`), with the reason on the line above `version:`
+(`tests/manifests/test_helm_chart_ranges.py`). Each HelmRelease's status
+shows the chart version it installed (`kubectl get helmrelease -A`).
 
 The democratic-csi driver config Secrets carry `helm.sh/resource-policy: keep`.
 Older Helm revisions rendered them from values, so an upgrade would otherwise

@@ -125,11 +125,13 @@ kubectl -n kube-system exec <cilium pod> -c cilium-agent -- hubble observe --nam
 kubectl -n kube-system exec <cilium pod> -c cilium-agent -- cilium-dbg status --verbose
 ```
 
-Flux upgrades Cilium like any HelmRelease: bump the chart version in
-`infrastructure/cilium/release.yaml` one minor at a time (the
+Flux upgrades Cilium like any HelmRelease: the chart range `1.x` in
+`infrastructure/cilium/release.yaml` takes each new 1.x minor and patch
+within an hour of its release, so minors arrive one at a time. The
 [upgrade guide](https://docs.cilium.io/en/stable/operations/upgrade/) lists
-what each minor changes) and only to a version whose compatibility table
-lists the cluster's Kubernetes minor.
+what each minor changes; if a minor's compatibility table drops the cluster's
+Kubernetes minor, pin the range to the last working minor (`~1.20`) until
+Kubernetes moves.
 
 ## Reinstalling a node
 

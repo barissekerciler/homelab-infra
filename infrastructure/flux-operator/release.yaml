@@ -10,8 +10,8 @@ spec:
   chart:
     spec:
       chart: flux-operator
-      # https://artifacthub.io/packages/helm/flux-operator/flux-operator/0.62.1?modal=values
-      version: 0.62.1
+      # 0.x chart, used only for its metrics: every 0.x release.
+      version: "0.x"
       sourceRef:
         kind: HelmRepository
         name: flux-operator

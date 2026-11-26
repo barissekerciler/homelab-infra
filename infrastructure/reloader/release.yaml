@@ -11,8 +11,7 @@ spec:
         kind: HelmRepository
         name: stakater
         namespace: flux-system
-      # https://github.com/stakater/Reloader/blob/chart-v2.2.20/deployments/kubernetes/chart/reloader/values.yaml
-      version: 2.2.20
+      version: "2.x"
   interval: 1h0m0s
   install:
     remediation:

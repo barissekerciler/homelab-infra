@@ -62,9 +62,11 @@ of them.
 5. `tenants` waits for `infrastructure`; each tenant's Kustomizations wait for
    the platform Kustomizations they build on.
 6. Helm applications use a `release.yaml` HelmRelease beside their resources,
-   with pinned chart versions and inline values. The line above `version:`
-   links that version's `values.yaml`; a chart bump updates the link too
-   (`tests/manifests/test_helm_values_links.py`).
+   with inline values and a chart version range inside one major (`43.x`), so
+   minors and patches arrive by themselves and a new major is a manual edit
+   after reading its upgrade notes. A 0.x chart takes `0.N.x` or `0.x`, with a
+   comment above `version:` saying why
+   (`tests/manifests/test_helm_chart_ranges.py`).
 
 ## Key components
 

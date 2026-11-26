@@ -62,6 +62,13 @@ pieces fit together: [Architecture and GitOps](gitops.md).
   in `flux-system` could push to this repository. The alternative, a read-only
   key with Renovate opening pull requests, would take updates out of Flux; I
   keep them in Flux.
+- **Charts update themselves inside their major.** Each HelmRelease takes a
+  version range (`43.x`), so minor and patch releases of every chart,
+  Cilium, cert-manager and the Prometheus stack included, install without
+  anyone reading their notes. A bad minor can take the cluster's network,
+  ingress or monitoring down until I revert or pin it in Git; in exchange
+  nothing falls behind, and only a new major (and a 0.x chart's minor, where
+  its range says so) waits for me ([Helm](gitops.md#helm)).
 - **Images update themselves inside their major.** Every image outside a
   chart's defaults follows an ImagePolicy that takes the newest minor and
   patch of its current major, and Flux deploys it without review; a new major

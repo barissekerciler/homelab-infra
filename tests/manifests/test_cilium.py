@@ -30,14 +30,14 @@ def values():
     return release()["spec"]["values"]
 
 
-def test_release_is_pinned_and_survives_prune():
+def test_release_stays_on_major_1_and_survives_prune():
     hr = release()
     assert hr["metadata"]["namespace"] == "kube-system"
     assert hr["spec"]["releaseName"] == "cilium"
     assert "targetNamespace" not in hr["spec"] and "storageNamespace" not in hr["spec"]
     chart = hr["spec"]["chart"]["spec"]
     assert chart["chart"] == "cilium"
-    assert re.fullmatch(r"\d+\.\d+\.\d+", chart["version"]), "pin an exact chart version"
+    assert chart["version"] == "1.x"
     assert chart["sourceRef"] == {"kind": "HelmRepository", "name": "cilium", "namespace": "flux-system"}
     # Deleting the HelmRelease would uninstall the CNI.
     assert hr["metadata"]["annotations"]["kustomize.toolkit.fluxcd.io/prune"] == "disabled"

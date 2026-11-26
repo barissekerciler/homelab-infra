@@ -8,8 +8,7 @@ spec:
   chart:
     spec:
       chart: nextcloud
-      # https://github.com/nextcloud/helm/blob/nextcloud-9.4.3/charts/nextcloud/values.yaml
-      version: 9.4.3
+      version: "9.x"
       sourceRef:
         kind: HelmRepository
         name: nextcloud

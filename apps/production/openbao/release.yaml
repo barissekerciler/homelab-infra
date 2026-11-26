@@ -7,8 +7,8 @@ spec:
   chart:
     spec:
       chart: openbao
-      # https://github.com/openbao/openbao-helm/blob/openbao-0.30.7/charts/openbao/values.yaml
-      version: 0.30.7
+      # 0.x chart; a minor moves OpenBao to a new minor, so patches only.
+      version: "0.30.x"
       sourceRef:
         kind: HelmRepository
         name: openbao

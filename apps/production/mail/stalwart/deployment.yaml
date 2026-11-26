@@ -95,10 +95,6 @@ spec:
             - --config
             - /etc/stalwart/config.json
           env:
-            # One start with it adds the permissions 1.2 introduced to the
-            # default roles; it comes out again in the next commit.
-            - name: STALWART_UPDATE_ROLE_PERMISSIONS
-              value: "true"
             - name: STALWART_DB_PASSWORD
               valueFrom:
                 secretKeyRef:

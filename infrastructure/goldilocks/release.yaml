@@ -14,8 +14,7 @@ spec:
         kind: HelmRepository
         name: fairwinds
         namespace: flux-system
-      # https://artifacthub.io/packages/helm/fairwinds-stable/goldilocks/11.2.1?modal=values
-      version: 11.2.1
+      version: "11.x"
   interval: 1h0m0s
   values:
     controller:

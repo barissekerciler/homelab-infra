@@ -11,8 +11,8 @@ spec:
         kind: HelmRepository
         name: democratic-csi
         namespace: flux-system
-      # https://github.com/democratic-csi/charts/blob/democratic-csi-0.15.1/stable/democratic-csi/values.yaml
-      version: 0.15.1
+      # 0.x chart for the storage driver: patches only.
+      version: "0.15.x"
   interval: 1h0m0s
   values:
     controller:
