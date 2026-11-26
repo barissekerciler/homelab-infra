@@ -431,6 +431,10 @@ commits the newest matching tag to `main`
   patch tags (Talos `~1.14`, Kubernetes `~1.36`) into `infrastructure/tuppr/upgrades`;
   tuppr upgrades the nodes in its night window (`talos/README.md`)
 
+A new major is a change of the policy's range alone: Flux then writes the new
+tag itself. Changing the image in the same commit races the old policy, which
+writes the old tag back once before the new range applies.
+
 Jobs whose image follows a policy carry `kustomize.toolkit.fluxcd.io/force:
 enabled`, so Flux recreates them with the new image. TrueNAS's node-exporter
 (`truenas/apps/node-exporter`) is installed by hand and has no policy.
