@@ -181,5 +181,8 @@ spec:
       services:
         - name: dispatcharr-vod-logo-redirect
           port: 8080
-  # The default TLS options, as on the Ingress for the same host.
-  tls: {}
+  # The default TLS options and certificate, as on the Ingress for the same
+  # host. An empty tls reaches the API as null, so it names the host.
+  tls:
+    domains:
+      - main: tv.home.bariss.dev
