@@ -62,6 +62,14 @@ pieces fit together: [Architecture and GitOps](gitops.md).
   in `flux-system` could push to this repository. The alternative, a read-only
   key with Renovate opening pull requests, would take updates out of Flux; I
   keep them in Flux.
+- **Images update themselves inside their major.** Every image outside a
+  chart's defaults follows an ImagePolicy that takes the newest minor and
+  patch of its current major, and Flux deploys it without review; a new major
+  is a manual change of the range. Downtime from a bad minor is accepted: it
+  reaches the cluster within hours of its release, with no test before, and
+  the fix is a revert in Git. Images without semver tags (LinuxServer.io,
+  Redlib's fork, uv) follow a floating tag's digest and so cross majors too
+  ([Image automation](gitops.md#image-automation)).
 - **CI runs on the cluster's Jenkins.** The checks for this repository
   (`Jenkinsfile`) run in a pod in the `jenkins` namespace, with no
   ServiceAccount token. The repository is public, so Jenkins builds only its

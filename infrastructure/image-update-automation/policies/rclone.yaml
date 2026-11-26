@@ -1,0 +1,16 @@
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: rclone
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: rclone
+  filterTags:
+    pattern: '^\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: "^1.76.0"
+  digestReflectionPolicy: IfNotPresent

@@ -68,8 +68,9 @@ of them.
 
 ## Key components
 
-- `flux` with image automation; `flux-operator` only for its Flux metrics
-  (`flux_resource_info`), without a FluxInstance or its Web UI
+- `flux` with image automation (every image follows its newest minor and
+  patch); `flux-operator` only for its Flux metrics (`flux_resource_info`),
+  without a FluxInstance or its Web UI
 - `oauth2-proxy` (`infrastructure/oauth2-proxy/home-bariss-dev`): GitHub
   sign-in in front of the admin UIs, all through `auth.home.bariss.dev`
 - `jenkins`: CI, including this repository's checks (`Jenkinsfile`) and the
@@ -177,6 +178,14 @@ commit plaintext secret values.
   instances' claims, and a rebuilt cluster restores from the Barman Cloud backups.
 - **Jobs** whose image follows automation carry
   `kustomize.toolkit.fluxcd.io/force: enabled` so Flux recreates them.
+- **Image automation**: every image Flux deploys outside a chart's defaults
+  (container `image:` lines, image tags in HelmRelease values) carries an
+  `$imagepolicy` marker for an ImagePolicy in
+  `infrastructure/image-update-automation/` labelled
+  `image-automation: flux-system-apps`, which takes the newest release of the
+  current major ([docs/gitops.md](docs/gitops.md#image-automation),
+  `tests/manifests/test_image_automation.py`). A new major is a manual change
+  of the policy's range.
 - **Chart CRDs**: `infrastructure` must not contain objects whose CRD a chart in
   it installs; put them under `infrastructure/configs/`. A new kind used after
   `infrastructure` needs its CRD in `infrastructure`'s health checks

@@ -1,3 +1,6 @@
+# Writes the $imagepolicy markers anywhere in the repository (apps/ and
+# infrastructure/). It takes only the policies labelled for it, so the talos and
+# kubelet markers stay with flux-system-tuppr.
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:
@@ -36,6 +39,9 @@ spec:
         name: fluxcdbot
     push:
       branch: main
+  policySelector:
+    matchLabels:
+      image-automation: flux-system-apps
   update:
-    path: ./apps
+    path: ./
     strategy: Setters

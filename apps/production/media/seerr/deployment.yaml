@@ -28,7 +28,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: seerr
-          image: seerr/seerr:latest@sha256:aadee014b40e28cf9aa4928bc9d1183a6eb08f8c44d543cddc9efdcb16549be2
+          image: seerr/seerr:v3.5.2@sha256:aadee014b40e28cf9aa4928bc9d1183a6eb08f8c44d543cddc9efdcb16549be2 # {"$imagepolicy": "flux-system:seerr"}
           ports:
             - containerPort: 5055
               name: http

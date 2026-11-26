@@ -22,7 +22,7 @@ spec:
         fsGroup: 568
       containers:
         - name: unpackerr
-          image: golift/unpackerr:1.0.1@sha256:fc8b69571033f197d4db5cf22a573acb3bb891c9f8033431b9a1fcf679ca3e9c
+          image: golift/unpackerr:1.0.1@sha256:fc8b69571033f197d4db5cf22a573acb3bb891c9f8033431b9a1fcf679ca3e9c # {"$imagepolicy": "flux-system:unpackerr"}
           env:
             - name: TZ
               value: Etc/UTC

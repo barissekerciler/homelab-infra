@@ -157,8 +157,10 @@ def test_media_is_not_pinned_or_bound_to_another_pods_node():
 @pytest.mark.parametrize("pod", ["controller", "node"])
 def test_csi_driver_image_stays_on_the_stable_release(driver, pod):
     # The chart defaults to the floating `latest` tag, which will move to a
-    # release that drops TrueNAS 25.x support.
+    # release that drops TrueNAS 25.x support; the image policy keeps 1.9.x.
     values = helm_values(f"infrastructure/democratic-csi/{driver}/release.yaml")
     image = values[pod]["driver"]["image"]
     assert image["registry"] == "ghcr.io/democratic-csi/democratic-csi"
-    assert re.fullmatch(r"v1\.9\.\d+@sha256:[0-9a-f]{64}", image["tag"])
+    assert re.fullmatch(r"v1\.9\.\d+", image["tag"])
+    policy = yaml.safe_load((ROOT / "infrastructure/image-update-automation/policies/democratic-csi.yaml").read_text())
+    assert policy["spec"]["policy"]["semver"]["range"].startswith("~1.9.")

@@ -1,0 +1,16 @@
+# 1.9.x is the line for TrueNAS 25.x; newer releases need TrueNAS 27.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: democratic-csi
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: democratic-csi
+  filterTags:
+    pattern: '^v\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: "~1.9.5"

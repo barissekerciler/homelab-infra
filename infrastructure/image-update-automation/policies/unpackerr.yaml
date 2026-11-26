@@ -1,0 +1,17 @@
+# Unpackerr publishes x.y.z and vx.y.z; take one form.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: unpackerr
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: unpackerr
+  filterTags:
+    pattern: '^\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: "^1.0.1"
+  digestReflectionPolicy: IfNotPresent

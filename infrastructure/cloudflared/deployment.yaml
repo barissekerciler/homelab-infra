@@ -28,7 +28,7 @@ spec:
             - --config
             - /etc/cloudflared/config/config.yaml
             - run
-          image: cloudflare/cloudflared:2026.11.0
+          image: cloudflare/cloudflared:2026.11.2@sha256:55c7e3e8d89d5e8d20b75a82f3602cbf98e06db406e73e282073cfdc5a9a3af6 # {"$imagepolicy": "flux-system:cloudflared"}
           env:
             - name: CLOUDFLARED_LOGLEVEL
               # debug logs every request's headers (cookies, Authorization)

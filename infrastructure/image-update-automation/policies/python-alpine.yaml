@@ -1,0 +1,18 @@
+# Python 3 on Alpine.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: python-alpine
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: python-alpine
+  filterTags:
+    pattern: '^(?P<version>3\.\d+\.\d+)-alpine$'
+    extract: '$version'
+  policy:
+    semver:
+      range: "^3.15.2"
+  digestReflectionPolicy: IfNotPresent

@@ -1,0 +1,17 @@
+# Still 0.x and released every few weeks: every 0.x release, as `latest` did before.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: dispatcharr
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: dispatcharr
+  filterTags:
+    pattern: '^\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: ">=0.34.1 <1.0.0"
+  digestReflectionPolicy: IfNotPresent

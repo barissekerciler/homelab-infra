@@ -21,7 +21,7 @@ spec:
     image:
       registry: quay.io
       repository: oauth2-proxy/oauth2-proxy
-      tag: "v7.15.6"
+      tag: v7.15.6 # {"$imagepolicy": "flux-system:oauth2-proxy:tag"}
     proxyVarsAsSecrets: true
     config:
       existingSecret: oauth2-proxy-secret

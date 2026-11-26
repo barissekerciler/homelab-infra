@@ -1,0 +1,18 @@
+# Ubuntu noble builds.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: playwright
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: playwright
+  filterTags:
+    pattern: '^v(?P<version>\d+\.\d+\.\d+)-noble$'
+    extract: '$version'
+  policy:
+    semver:
+      range: "^1.65.1"
+  digestReflectionPolicy: IfNotPresent

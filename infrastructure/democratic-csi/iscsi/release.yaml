@@ -24,8 +24,9 @@ spec:
         enabled: true
         image:
           registry: ghcr.io/democratic-csi/democratic-csi
-          # Stable release for TrueNAS 25.x. Newer builds need TrueNAS 27.
-          tag: v1.9.5@sha256:fc3b7d7ed3a616714139525075312758e23a5d425ffb539ad12c9bd20fb6001f
+          # The policy keeps 1.9.x, the line for TrueNAS 25.x (newer releases need
+          # TrueNAS 27). The chart takes no digest.
+          tag: v1.9.5 # {"$imagepolicy": "flux-system:democratic-csi:tag"}
         resources:
           requests:
             cpu: 10m
@@ -83,7 +84,7 @@ spec:
         image:
           registry: ghcr.io/democratic-csi/democratic-csi
           # Same release as the controller.
-          tag: v1.9.5@sha256:fc3b7d7ed3a616714139525075312758e23a5d425ffb539ad12c9bd20fb6001f
+          tag: v1.9.5 # {"$imagepolicy": "flux-system:democratic-csi:tag"}
         resources:
           requests:
             cpu: 50m

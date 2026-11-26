@@ -1,0 +1,17 @@
+# Frigate is 0.x and each minor changes the config, so only 0.18 patches.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: frigate
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: frigate
+  filterTags:
+    pattern: '^\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: "~0.18.3"
+  digestReflectionPolicy: IfNotPresent

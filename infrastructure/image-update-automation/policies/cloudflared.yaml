@@ -1,0 +1,17 @@
+# Calendar versions (year.month.patch) carry no major, so no upper bound.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: cloudflared
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: cloudflared
+  filterTags:
+    pattern: '^\d{4}\.\d+\.\d+$'
+  policy:
+    semver:
+      range: ">=2026.11.2"
+  digestReflectionPolicy: IfNotPresent

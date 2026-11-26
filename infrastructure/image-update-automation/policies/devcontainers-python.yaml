@@ -1,0 +1,18 @@
+# Python 3.13 on Debian trixie; the image's own version leads the tag.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: devcontainers-python
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: devcontainers-python
+  filterTags:
+    pattern: '^(?P<version>\d+\.\d+\.\d+)-3\.13-trixie$'
+    extract: '$version'
+  policy:
+    semver:
+      range: "^3.3.4"
+  digestReflectionPolicy: IfNotPresent

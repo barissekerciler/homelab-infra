@@ -4,6 +4,8 @@ kind: ImagePolicy
 metadata:
   name: umami
   namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
 spec:
   imageRepositoryRef:
     name: umami

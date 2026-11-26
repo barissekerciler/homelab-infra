@@ -28,7 +28,7 @@ spec:
       priorityClassName: frigate-camera
       containers:
         - name: mirror
-          image: rclone/rclone:1.76.0@sha256:7cbeec24a44f206067597c0368be4de90ae19a64d5113c7d1938bd737a81e466
+          image: rclone/rclone:1.76.0@sha256:7cbeec24a44f206067597c0368be4de90ae19a64d5113c7d1938bd737a81e466 # {"$imagepolicy": "flux-system:rclone"}
           command:
             - sh
             - /etc/nas-mirror/nas-mirror.sh

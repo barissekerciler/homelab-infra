@@ -46,7 +46,7 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
-          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          image: ghcr.io/dispatcharr/dispatcharr:0.34.1@sha256:3716ebb0aba133fe8b3d311505dc49966b7fddff742d9ab710ccd19d04658195 # {"$imagepolicy": "flux-system:dispatcharr"}
           command:
             - /bin/sh
             - -c
@@ -67,7 +67,7 @@ spec:
               cpu: 100m
       containers:
         - name: dispatcharr
-          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          image: ghcr.io/dispatcharr/dispatcharr:0.34.1@sha256:3716ebb0aba133fe8b3d311505dc49966b7fddff742d9ab710ccd19d04658195 # {"$imagepolicy": "flux-system:dispatcharr"}
           ports:
             - containerPort: 9191
               name: http
@@ -192,7 +192,7 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
-          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          image: ghcr.io/dispatcharr/dispatcharr:0.34.1@sha256:3716ebb0aba133fe8b3d311505dc49966b7fddff742d9ab710ccd19d04658195 # {"$imagepolicy": "flux-system:dispatcharr"}
           command:
             - /bin/sh
             - -c
@@ -216,7 +216,7 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
-          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          image: ghcr.io/dispatcharr/dispatcharr:0.34.1@sha256:3716ebb0aba133fe8b3d311505dc49966b7fddff742d9ab710ccd19d04658195 # {"$imagepolicy": "flux-system:dispatcharr"}
           command:
             - /bin/sh
             - -c

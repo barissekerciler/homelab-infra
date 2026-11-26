@@ -20,7 +20,8 @@ spec:
   values:
     image:
       repository: ghcr.io/jellyfin/jellyfin
-      tag: 12.4@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771
+      # The build tag is unique, so it needs no digest (the chart takes none).
+      tag: 12.4.20261026-211555 # {"$imagepolicy": "flux-system:jellyfin:tag"}
     # One writer for the SQLite database on the RWO volume.
     deploymentStrategy:
       type: Recreate
@@ -32,7 +33,7 @@ spec:
     # the dashboard returns to Git's value at the next restart.
     extraInitContainers:
       - name: copy-system-xml
-        image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+        image: busybox:1.38.0@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4 # {"$imagepolicy": "flux-system:busybox"}
         command:
           - sh
           - -c

@@ -1,0 +1,18 @@
+# The Apache build that runs as non-root.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: roundcube
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: roundcube
+  filterTags:
+    pattern: '^(?P<version>\d+\.\d+\.\d+)-apache-nonroot$'
+    extract: '$version'
+  policy:
+    semver:
+      range: "^1.7.7"
+  digestReflectionPolicy: IfNotPresent

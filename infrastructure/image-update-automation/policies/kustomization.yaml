@@ -4,5 +4,36 @@ namespace: flux-system
 resources:
   - redlib.yaml
   - umami.yaml
+  - adguardhome.yaml
+  - bazarr.yaml
+  - busybox.yaml
+  - cloudflared.yaml
+  - democratic-csi.yaml
+  - devcontainers-python.yaml
+  - dispatcharr.yaml
+  - flaresolverr.yaml
+  - frigate.yaml
+  - gluetun.yaml
+  - immich-machine-learning.yaml
+  - immich-server.yaml
+  - intel-gpu-plugin.yaml
+  - jellyfin.yaml
+  - oauth2-proxy.yaml
+  - playwright.yaml
+  - prowlarr.yaml
+  - python-alpine.yaml
+  - radarr.yaml
+  - rclone.yaml
+  - recyclarr.yaml
+  - redis.yaml
+  - roundcube.yaml
+  - seerr.yaml
+  - sonarr.yaml
+  - stalwart.yaml
+  - unpackerr.yaml
+  - uv-python3-11.yaml
+  - valkey.yaml
+  - vikunja.yaml
+  - wireguard.yaml
   - talos.yaml
   - kubelet.yaml

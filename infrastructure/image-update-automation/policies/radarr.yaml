@@ -1,0 +1,19 @@
+# LinuxServer.io tags (<version>-ls<build>) are not semver and the build
+# counter restarts, so follow latest and write its digest.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: radarr
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: radarr
+  filterTags:
+    pattern: '^latest$'
+  policy:
+    alphabetical:
+      order: asc
+  digestReflectionPolicy: Always
+  interval: 6h

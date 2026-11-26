@@ -1,0 +1,17 @@
+# Jellyfin tags each build 12.<minor>.<date>-<time>; the newest 12.x build wins.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: jellyfin
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: jellyfin
+  filterTags:
+    pattern: '^12\.\d+\.(?P<date>\d{8})-(?P<time>\d{6})$'
+    extract: '$date$time'
+  policy:
+    numerical:
+      order: asc

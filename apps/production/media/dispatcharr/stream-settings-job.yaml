@@ -19,7 +19,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: configure
-          image: ghcr.io/dispatcharr/dispatcharr:latest@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
+          image: ghcr.io/dispatcharr/dispatcharr:0.34.1@sha256:3716ebb0aba133fe8b3d311505dc49966b7fddff742d9ab710ccd19d04658195 # {"$imagepolicy": "flux-system:dispatcharr"}
           imagePullPolicy: Always
           command:
             - /bin/sh

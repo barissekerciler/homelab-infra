@@ -6,6 +6,8 @@ kind: ImagePolicy
 metadata:
   name: redlib
   namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
 spec:
   imageRepositoryRef:
     name: redlib

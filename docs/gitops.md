@@ -86,7 +86,8 @@ flowchart TB
   with its own ServiceAccount, Git source and image automation
   ([tenants.md](tenants.md)).
 - **Upgrades**: Flux image automation and tuppr keep Talos and Kubernetes on the
-  latest patch release; chart versions are pinned and bumped in Git
+  latest patch release, and every other image on the newest release of its
+  major; chart versions are pinned and bumped in Git
   ([Image automation](#image-automation)). Jenkins checks every branch and
   pull request ([CI](#ci)).
 
@@ -387,19 +388,45 @@ delete them.
 
 ## Image automation
 
+Every image Flux deploys that a chart does not pick itself follows an
+ImagePolicy: container images in hand-written manifests and the image tags
+set in HelmRelease values (Immich, Jellyfin, Vikunja, oauth2-proxy,
+democratic-csi). The image line carries an `$imagepolicy` marker, and Flux
+commits the newest matching tag to `main`
+(`tests/manifests/test_image_automation.py`).
+
 `infrastructure/image-update-automation/` contains:
 
-- `sources.yaml`: Redlib's fork (`ghcr.io/nachtalb/redlib`), scanned hourly, and
-  Umami and the Talos and kubelet images, scanned twice a day
-- `policies/`: `redlib` follows `latest` and reflects its digest, because the
-  fork's `sha-<commit>` tags do not sort by age, so `apps/production/redlib`
-  pins `latest@sha256:...`; `umami` picks the newest 3.x release for
-  `apps/production/umami`; `talos` and `kubelet` pick the newest patch release
-- `image-update-automation.yaml`: writes `$imagepolicy` markers under `apps/`
-  and pushes to `main`
+- `sources.yaml`: one ImageRepository per image, scanned every 6 or 12 hours
+  (Redlib hourly)
+- `policies/`: one ImagePolicy per image. Versioned images take the newest
+  release inside their current major (`^<version>`), so minors and patches
+  arrive by themselves and a new major is a manual change of the range.
+  Exceptions, each explained in its file: 0.x images keep their minor where a
+  minor breaks things (Frigate `~0.18`) and take every 0.x release otherwise
+  (Dispatcharr, the Intel GPU plugin); democratic-csi stays on 1.9.x for
+  TrueNAS 25.x; cloudflared's calendar versions have no upper bound.
+  `filterTags` keeps a tag's suffix (`-alpine`, `-apache-nonroot`, `-noble`,
+  `-3.13-trixie`) and extracts the version from it. Policies record the
+  image's digest, so the manifests pin `<tag>@sha256:...` where the
+  manifest or chart takes one (`:digest` markers for Immich's chart).
+  Images without usable version tags follow a floating tag and its digest:
+  the LinuxServer.io images (Sonarr, Radarr, Prowlarr, Bazarr, WireGuard),
+  whose `-ls<build>` tags are not semver and whose build counter restarts,
+  `latest` of Redlib's fork, whose `sha-<commit>` tags do not sort by age, and
+  uv's `python3.11-bookworm-slim` for Frigate's model export. Jellyfin's build
+  tags (`12.<minor>.<date>-<time>`) are unique, so the newest 12.x build wins
+  by its timestamp. `talos` and `kubelet` pick the newest patch release
+- `image-update-automation.yaml` (`flux-system-apps`): writes the markers
+  anywhere in the repository for the policies labelled
+  `image-automation: flux-system-apps` and pushes to `main`
 - `tuppr-update-automation.yaml`: writes the `talos` and `kubelet` policies' newest
   patch tags (Talos `~1.14`, Kubernetes `~1.36`) into `infrastructure/tuppr/upgrades`;
   tuppr upgrades the nodes in its night window (`talos/README.md`)
+
+Jobs whose image follows a policy carry `kustomize.toolkit.fluxcd.io/force:
+enabled`, so Flux recreates them with the new image. TrueNAS's node-exporter
+(`truenas/apps/node-exporter`) is installed by hand and has no policy.
 
 Tenants run their own image automation in their namespace and push to their own
 repository.

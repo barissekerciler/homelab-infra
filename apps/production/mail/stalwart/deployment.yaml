@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: wireguard
-          image: lscr.io/linuxserver/wireguard:1.0.20260223-r0-ls130
+          image: lscr.io/linuxserver/wireguard:latest@sha256:10db56ad834f94541307d5dfdbe87370e26d155bb341a5bf65789f970f24ab5c # {"$imagepolicy": "flux-system:wireguard"}
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -89,12 +89,16 @@ spec:
               memory: 128Mi
       containers:
         - name: stalwart
-          image: stalwartlabs/stalwart:v1.1.0@sha256:f772aa6ef8cd8018969fa491640f1436b0270eb14e2c219b5f37f1a77020837e
+          image: stalwartlabs/stalwart:v1.2.0@sha256:79ea09d25baad7e074d8df53db474571c5dc62621298e35e09e9cfd764333ed8 # {"$imagepolicy": "flux-system:stalwart"}
           imagePullPolicy: IfNotPresent
           args:
             - --config
             - /etc/stalwart/config.json
           env:
+            # One start with it adds the permissions 1.2 introduced to the
+            # default roles; it comes out again in the next commit.
+            - name: STALWART_UPDATE_ROLE_PERMISSIONS
+              value: "true"
             - name: STALWART_DB_PASSWORD
               valueFrom:
                 secretKeyRef:

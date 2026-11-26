@@ -1,0 +1,17 @@
+# 0.x, released with the Intel device plugins; every 0.x release.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: intel-gpu-plugin
+  namespace: flux-system
+  labels:
+    image-automation: flux-system-apps
+spec:
+  imageRepositoryRef:
+    name: intel-gpu-plugin
+  filterTags:
+    pattern: '^\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: ">=0.37.1 <1.0.0"
+  digestReflectionPolicy: IfNotPresent

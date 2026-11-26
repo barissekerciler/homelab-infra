@@ -19,6 +19,285 @@ spec:
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
+  name: adguardhome
+  namespace: flux-system
+spec:
+  image: adguard/adguardhome
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: bazarr
+  namespace: flux-system
+spec:
+  image: linuxserver/bazarr
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: busybox
+  namespace: flux-system
+spec:
+  image: busybox
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: cloudflared
+  namespace: flux-system
+spec:
+  image: cloudflare/cloudflared
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: democratic-csi
+  namespace: flux-system
+spec:
+  image: ghcr.io/democratic-csi/democratic-csi
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: devcontainers-python
+  namespace: flux-system
+spec:
+  image: mcr.microsoft.com/devcontainers/python
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: dispatcharr
+  namespace: flux-system
+spec:
+  image: ghcr.io/dispatcharr/dispatcharr
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: flaresolverr
+  namespace: flux-system
+spec:
+  image: flaresolverr/flaresolverr
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: frigate
+  namespace: flux-system
+spec:
+  image: ghcr.io/blakeblackshear/frigate
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: gluetun
+  namespace: flux-system
+spec:
+  image: qmcgaw/gluetun
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: immich-machine-learning
+  namespace: flux-system
+spec:
+  image: ghcr.io/immich-app/immich-machine-learning
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: immich-server
+  namespace: flux-system
+spec:
+  image: ghcr.io/immich-app/immich-server
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: intel-gpu-plugin
+  namespace: flux-system
+spec:
+  image: intel/intel-gpu-plugin
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: jellyfin
+  namespace: flux-system
+spec:
+  image: ghcr.io/jellyfin/jellyfin
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: oauth2-proxy
+  namespace: flux-system
+spec:
+  image: quay.io/oauth2-proxy/oauth2-proxy
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: playwright
+  namespace: flux-system
+spec:
+  image: mcr.microsoft.com/playwright
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: prowlarr
+  namespace: flux-system
+spec:
+  image: linuxserver/prowlarr
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: python-alpine
+  namespace: flux-system
+spec:
+  image: python
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: radarr
+  namespace: flux-system
+spec:
+  image: linuxserver/radarr
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: rclone
+  namespace: flux-system
+spec:
+  image: rclone/rclone
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: recyclarr
+  namespace: flux-system
+spec:
+  image: ghcr.io/recyclarr/recyclarr
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: redis
+  namespace: flux-system
+spec:
+  image: docker.io/library/redis
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: roundcube
+  namespace: flux-system
+spec:
+  image: roundcube/roundcubemail
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: seerr
+  namespace: flux-system
+spec:
+  image: seerr/seerr
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: sonarr
+  namespace: flux-system
+spec:
+  image: linuxserver/sonarr
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: stalwart
+  namespace: flux-system
+spec:
+  image: stalwartlabs/stalwart
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: unpackerr
+  namespace: flux-system
+spec:
+  image: golift/unpackerr
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: uv-python3-11
+  namespace: flux-system
+spec:
+  image: ghcr.io/astral-sh/uv
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: valkey
+  namespace: flux-system
+spec:
+  image: valkey/valkey
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: vikunja
+  namespace: flux-system
+spec:
+  image: vikunja/vikunja
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: wireguard
+  namespace: flux-system
+spec:
+  image: lscr.io/linuxserver/wireguard
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
   name: talos
   namespace: flux-system
 spec:
