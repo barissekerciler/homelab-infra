@@ -181,6 +181,5 @@ spec:
       services:
         - name: dispatcharr-vod-logo-redirect
           port: 8080
-  tls:
-    options:
-      name: default
+  # The default TLS options, as on the Ingress for the same host.
+  tls: {}

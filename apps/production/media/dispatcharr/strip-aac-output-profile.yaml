@@ -24,6 +24,5 @@ spec:
       services:
         - name: dispatcharr
           port: 9191
-  tls:
-    options:
-      name: default
+  # The default TLS options, as on the Ingress for the same host.
+  tls: {}
