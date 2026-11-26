@@ -23,8 +23,7 @@ spec:
       namespace: postgresql
       expr: has(status.readyInstances) && status.readyInstances == status.instances
       description: both postgres instances ready
-  # Nightly, after Jellyfin's 03:00 trickplay run. homelab is the only control
-  # plane, so its reboot takes the Kubernetes API away for a few minutes.
+  # Nightly, after Jellyfin's 03:00 trickplay run.
   maintenance:
     windows:
       - start: "30 4 * * *"
