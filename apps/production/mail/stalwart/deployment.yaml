@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: wireguard
-          image: lscr.io/linuxserver/wireguard:latest@sha256:10db56ad834f94541307d5dfdbe87370e26d155bb341a5bf65789f970f24ab5c # {"$imagepolicy": "flux-system:wireguard"}
+          image: lscr.io/linuxserver/wireguard:latest@sha256:30fcd4e2d5793935e3e3d913e3e874ecee27bc2bf01b2cb824a5cb01e02a1043 # {"$imagepolicy": "flux-system:wireguard"}
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
